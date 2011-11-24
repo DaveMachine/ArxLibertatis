@@ -54,22 +54,6 @@ public:
 		nRenderStates,
 	};
 	
-	struct RendererConfiguration
-	{
-		struct dirty_flags
-		{
-			bool RenderState[nRenderStates];
-		};
-
-		struct state_struct
-		{
-			bool RenderState[nRenderStates];
-		};
-
-		state_struct state;
-		dirty_flags dirty;
-	};
-
 	//! Pixel comparison functions
 	enum PixelCompareFunc {
 		CmpNever,               //!< Never
@@ -140,6 +124,33 @@ public:
 		Stream
 	};
 	
+	struct RendererConfiguration
+	{
+		struct dirty_flags
+		{
+			bool RenderState[nRenderStates];
+			bool alphafunc;
+			bool blendfunc;
+		};
+
+		struct state_struct
+		{
+			// set render state
+			bool RenderState[nRenderStates];
+
+			// set alpha func
+			PixelCompareFunc alphafunc;
+			float alphafef;
+
+			// set blend func
+			PixelBlendingFactor blendsrcFactor;
+			PixelBlendingFactor blenddstFactor;
+		};
+
+		state_struct state;
+		dirty_flags dirty;
+	};
+
 	Renderer();
 	virtual ~Renderer();
 	
@@ -176,14 +187,33 @@ public:
 		RendererConfiguration *config = RendererConfigurationStack.back();
 		config->dirty.RenderState[i] = true;
 		config->state.RenderState[i] = enable;
-		ApplyRenderState(i, config->state.RenderState[i]);
+		ApplyRenderState(i, enable);
 	}
 	virtual void ApplyRenderState(const RenderState &i, const bool &enable) = 0;
 	
 	// Alphablending & Transparency
-	virtual void SetAlphaFunc(PixelCompareFunc func, float fef) = 0; // Ref = [0.0f, 1.0f]
-	virtual void SetBlendFunc(PixelBlendingFactor srcFactor, PixelBlendingFactor dstFactor) = 0;
+	void SetAlphaFunc(const PixelCompareFunc &func, const float &fef) // Ref = [0.0f, 1.0f]
+	{
+		RendererConfiguration *config = RendererConfigurationStack.back();
+		config->dirty.alphafunc = true;
+		config->state.alphafunc = func;
+		config->state.alphafef = fef;
+		ApplyAlphaFunc(func, fef);
+	}
+
+	virtual void ApplyAlphaFunc(const PixelCompareFunc &func, const float &fef) = 0; // Ref = [0.0f, 1.0f]
+
+	void SetBlendFunc(const PixelBlendingFactor &srcFactor, const PixelBlendingFactor &dstFactor)
+	{
+		RendererConfiguration *config = RendererConfigurationStack.back();
+		config->dirty.blendfunc = true;
+		config->state.blendsrcFactor = srcFactor;
+		config->state.blenddstFactor = dstFactor;
+		ApplyBlendFunc(srcFactor, dstFactor);
+	}
 	
+	virtual void ApplyBlendFunc(const PixelBlendingFactor &srcFactor, const PixelBlendingFactor &dstFactor) = 0;
+
 	// Viewport
 	virtual void SetViewport(const Rect & viewport) = 0;
 	virtual Rect GetViewport() = 0;

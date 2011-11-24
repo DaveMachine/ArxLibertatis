@@ -111,6 +111,10 @@ private:
 	
 	void setFullscreen(bool fullscreen);
 	
+	// split from Render()
+	void render_particles();
+	void render_player();
+	void render_cursor();
 };
 
 #endif // ARX_CORE_ARXGAME_H

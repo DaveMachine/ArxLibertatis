@@ -100,6 +100,16 @@ void Renderer::PopRendererConfiguration()
 		}
 	}
 
+	if (config->dirty.alphafunc)
+	{
+		ApplyAlphaFunc(config->state.alphafunc, config->state.alphafef);
+	}
+
+	if (config->dirty.blendfunc)
+	{
+		ApplyBlendFunc(config->state.blendsrcFactor, config->state.blenddstFactor);
+	}
+
 	// ...
 
 	delete config;

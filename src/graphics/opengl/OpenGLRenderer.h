@@ -61,8 +61,8 @@ public:
 	void ApplyRenderState(const RenderState &renderState, const bool &enable);
 	
 	// Alphablending & Transparency
-	void SetAlphaFunc(PixelCompareFunc func, float fef); // Ref = [0.0f, 1.0f]
-	void SetBlendFunc(PixelBlendingFactor srcFactor, PixelBlendingFactor dstFactor);
+	void ApplyAlphaFunc(const PixelCompareFunc &func, const float &fef); // Ref = [0.0f, 1.0f]
+	void ApplyBlendFunc(const PixelBlendingFactor &srcFactor, const PixelBlendingFactor &dstFactor);
 	
 	// Viewport
 	void SetViewport(const Rect & viewport);
