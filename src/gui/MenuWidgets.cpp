@@ -5152,58 +5152,62 @@ static void DrawLine2D(const Vec2s * points, int _iNbPt, float _fSize, float _fR
 
 void MenuCursor::DrawCursor()
 {
-	if(!bDrawCursor)
-		return;
-
-	GRenderer->SetRenderState(Renderer::AlphaBlending, true);
-	DrawLine2D(iOldCoord, iNbOldCoord, 10.f, .725f, .619f, 0.56f);
-
-	if(pTex[iNumCursor]) 
-		GRenderer->SetTexture(0, pTex[iNumCursor]);
-	else 
-		GRenderer->ResetTexture(0);
-
-	GRenderer->SetRenderState(Renderer::AlphaBlending, false);
-
-	GRenderer->SetRenderState(Renderer::DepthTest, false);
-	DrawOneCursor(GInput->getMousePosAbs());
-	GRenderer->SetRenderState(Renderer::DepthTest, true);
-
-	lFrameDiff += checked_range_cast<long>(ARXDiffTimeMenu);
-
-	if(lFrameDiff>70)
+	if (bDrawCursor)
 	{
-		if(bMouseOver)
+		GRenderer->PushRendererConfiguration();
+
+		GRenderer->SetRenderState(Renderer::AlphaBlending, true);
+		DrawLine2D(iOldCoord, iNbOldCoord, 10.f, .725f, .619f, 0.56f);
+
+		if (pTex[iNumCursor]) 
 		{
-			if(iNumCursor<4)
+			GRenderer->SetTexture(0, pTex[iNumCursor]);
+		}
+		else 
+		{
+			GRenderer->ResetTexture(0);
+		}
+
+		GRenderer->SetRenderState(Renderer::AlphaBlending, false);
+		GRenderer->SetRenderState(Renderer::DepthTest, false);
+		DrawOneCursor(GInput->getMousePosAbs());
+
+		lFrameDiff += checked_range_cast<long>(ARXDiffTimeMenu);
+
+		if(lFrameDiff>70)
+		{
+			if(bMouseOver)
 			{
-				iNumCursor++;
+				if(iNumCursor<4)
+				{
+					iNumCursor++;
+				}
+				else
+				{
+					if(iNumCursor>4)
+					{
+						iNumCursor--;
+					}
+				}
+
+				SetCursorOff();
+				bMouseOver=false;
 			}
 			else
 			{
-				if(iNumCursor>4)
+				if (iNumCursor > 0)
 				{
-					iNumCursor--;
+					iNumCursor++;
+
+					if(iNumCursor>7) iNumCursor=0;
 				}
 			}
 
-			SetCursorOff();
-			bMouseOver=false;
-		}
-		else
-		{
-			if (iNumCursor > 0)
-			{
-				iNumCursor++;
-
-				if(iNumCursor>7) iNumCursor=0;
-			}
+			lFrameDiff=0;
 		}
 
-		lFrameDiff=0;
+		GRenderer->PopRendererConfiguration();
 	}
-
-	GRenderer->SetRenderState(Renderer::AlphaBlending, false);
 }
 
 //-----------------------------------------------------------------------------

@@ -43,16 +43,33 @@ public:
 	
 	//! Render states
 	enum RenderState {
-		AlphaBlending,
+		AlphaBlending = 0,
 		AlphaTest,
 		ColorKey,
 		DepthTest,
 		DepthWrite,
 		Fog,
 		Lighting,
-		ZBias
+		ZBias,
+		nRenderStates,
 	};
 	
+	struct RendererConfiguration
+	{
+		struct dirty_flags
+		{
+			bool RenderState[nRenderStates];
+		};
+
+		struct state_struct
+		{
+			bool RenderState[nRenderStates];
+		};
+
+		state_struct state;
+		dirty_flags dirty;
+	};
+
 	//! Pixel comparison functions
 	enum PixelCompareFunc {
 		CmpNever,               //!< Never
@@ -123,6 +140,7 @@ public:
 		Stream
 	};
 	
+	Renderer();
 	virtual ~Renderer();
 	
 	virtual void Initialize() = 0;
@@ -135,8 +153,12 @@ public:
 	virtual void SetViewMatrix(const EERIEMATRIX & matView) = 0;
 	void SetViewMatrix(const Vec3f & vPosition, const Vec3f & vDir, const Vec3f & vUp);
 	virtual void GetViewMatrix(EERIEMATRIX & matView) const = 0;
+	void pushViewMatrix() {}
+	void popViewMatrix() {}
 	virtual void SetProjectionMatrix(const EERIEMATRIX & matProj) = 0;
 	virtual void GetProjectionMatrix(EERIEMATRIX & matProj) const = 0;
+	void pushProjectionMatrix() {}
+	void popProjectionMatrix() {}
 	
 	// Texture management
 	virtual void ReleaseAllTextures() = 0;
@@ -146,7 +168,17 @@ public:
 	virtual Texture2D * CreateTexture2D() = 0;
 	
 	// Render states
-	virtual void SetRenderState(RenderState renderState, bool enable) = 0;
+	void PushRendererConfiguration();
+	void PopRendererConfiguration();
+
+	void SetRenderState(const RenderState &i, const bool &enable)
+	{
+		RendererConfiguration *config = RendererConfigurationStack.back();
+		config->dirty.RenderState[i] = true;
+		config->state.RenderState[i] = enable;
+		ApplyRenderState(i, config->state.RenderState[i]);
+	}
+	virtual void ApplyRenderState(const RenderState &i, const bool &enable) = 0;
 	
 	// Alphablending & Transparency
 	virtual void SetAlphaFunc(PixelCompareFunc func, float fef) = 0; // Ref = [0.0f, 1.0f]
@@ -198,7 +230,10 @@ public:
 protected:
 	
 	std::vector<TextureStage *> m_TextureStages;
+
+private:
 	
+	std::vector<RendererConfiguration *> RendererConfigurationStack;
 };
 
 DECLARE_FLAGS_OPERATORS(Renderer::BufferFlags)
