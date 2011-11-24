@@ -400,7 +400,7 @@ static const GLenum arxToGlPixelCompareFunc[] = {
 	GL_ALWAYS // CmpAlways
 };
 
-void OpenGLRenderer::SetAlphaFunc(PixelCompareFunc func, float ref) {
+void OpenGLRenderer::ApplyAlphaFunc(const PixelCompareFunc &func, const float &ref) {
 	glAlphaFunc(arxToGlPixelCompareFunc[func], ref);
 	CHECK_GL;
 }
@@ -419,7 +419,7 @@ static const GLenum arxToGlBlendFactor[] = {
 	GL_ONE_MINUS_DST_ALPHA // BlendInvDstAlpha
 };
 
-void OpenGLRenderer::SetBlendFunc(PixelBlendingFactor srcFactor, PixelBlendingFactor dstFactor) {
+void OpenGLRenderer::ApplyBlendFunc(const PixelBlendingFactor &srcFactor, const PixelBlendingFactor &dstFactor) {
 	glBlendFunc(arxToGlBlendFactor[srcFactor], arxToGlBlendFactor[dstFactor]);
 	CHECK_GL;
 }

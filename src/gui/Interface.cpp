@@ -8158,8 +8158,9 @@ void ARX_INTERFACE_RenderCursorInternal(long flag)
 	if (!SPECIAL_DRAGINTER_RENDER)
 	{
 		ManageIgnition_2(DRAGINTER);
-		GRenderer->GetTextureStage(0)->SetMinFilter(TextureStage::FilterNearest);
-		GRenderer->GetTextureStage(0)->SetMagFilter(TextureStage::FilterNearest);
+		// adejr: why nearest?
+		//GRenderer->GetTextureStage(0)->SetMinFilter(TextureStage::FilterNearest);
+		//GRenderer->GetTextureStage(0)->SetMagFilter(TextureStage::FilterNearest);
 		GRenderer->GetTextureStage(0)->SetWrapMode(TextureStage::WrapClamp);
 	}
 
@@ -8593,6 +8594,7 @@ void ARX_INTERFACE_RenderCursorInternal(long flag)
 					
 					if(surf) {
 						
+						GRenderer->PushRendererConfiguration();
 						GRenderer->SetRenderState(Renderer::AlphaBlending, true);
 						GRenderer->SetBlendFunc(Renderer::BlendOne, Renderer::BlendOne);
 						
@@ -8602,7 +8604,7 @@ void ARX_INTERFACE_RenderCursorInternal(long flag)
 						EERIEDrawBitmap(POSX, POSY, float(surf->m_dwWidth),
 						                float(surf->m_dwHeight), 0.f, surf, Color::gray(.5f));
 						
-						GRenderer->SetRenderState(Renderer::AlphaBlending, false);
+						GRenderer->PopRendererConfiguration();
 					}
 				}
 			}
