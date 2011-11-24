@@ -309,7 +309,7 @@ Texture2D* D3D9Renderer::CreateTexture2D() {
 	return new DX9Texture2D();
 }
 
-void D3D9Renderer::SetRenderState(RenderState renderState, bool enable) {
+void D3D9Renderer::ApplyRenderState(const RenderState &renderState, const bool &enable) {
 	if(renderState == ColorKey)
 	{
 		SetRenderState(AlphaTest, enable);

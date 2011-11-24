@@ -336,7 +336,7 @@ static inline void setGLState(GLenum state, bool enable) {
 	}
 }
 
-void OpenGLRenderer::SetRenderState(RenderState renderState, bool enable) {
+void OpenGLRenderer::ApplyRenderState(const RenderState &renderState, const bool &enable) {
 	
 	switch(renderState) {
 		

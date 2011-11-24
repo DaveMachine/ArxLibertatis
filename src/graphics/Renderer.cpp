@@ -50,6 +50,10 @@ Renderer::~Renderer() {
 	for(size_t i = 0; i < m_TextureStages.size(); ++i) {
 		delete m_TextureStages[i];
 	}
+
+	arx_assert(!RendererConfigurationStack.empty());
+	RendererConfigurationStack.pop_back();
+	arx_assert(RendererConfigurationStack.empty());
 }
 
 void Renderer::SetViewMatrix(const Vec3f & position, const Vec3f & dir, const Vec3f & up) {
@@ -58,4 +62,45 @@ void Renderer::SetViewMatrix(const Vec3f & position, const Vec3f & dir, const Ve
 	Util_SetViewMatrix(mat, position, dir, up);
 	
 	SetViewMatrix(mat);
+}
+
+Renderer::Renderer()
+{
+	// stack must always contain at least current state
+	RendererConfiguration *config = new RendererConfiguration;
+	memset(config, 0, sizeof(RendererConfiguration));
+	RendererConfigurationStack.push_back(config);
+}
+
+void Renderer::PushRendererConfiguration()
+{
+	RendererConfiguration *old = RendererConfigurationStack.back();
+
+	// allocate a new configuration state and copy the current configuration there
+	RendererConfiguration *config = new RendererConfiguration;
+	memcpy(&config->state, &old->state, sizeof(RendererConfiguration::state_struct));
+	memset(&config->dirty, 0, sizeof(RendererConfiguration::dirty_flags));
+
+	RendererConfigurationStack.push_back(config);
+}
+
+void Renderer::PopRendererConfiguration()
+{
+	arx_assert(!RendererConfigurationStack.empty());
+	RendererConfiguration *config = RendererConfigurationStack.back();
+	RendererConfigurationStack.pop_back();
+	arx_assert(!RendererConfigurationStack.empty());
+	RendererConfiguration *old = RendererConfigurationStack.back();
+
+	for (int i = 0; i < nRenderStates; i++)
+	{
+		if (config->dirty.RenderState[i])
+		{
+			ApplyRenderState((RenderState)i, old->state.RenderState[i]);
+		}
+	}
+
+	// ...
+
+	delete config;
 }
