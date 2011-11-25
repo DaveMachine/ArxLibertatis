@@ -20,6 +20,7 @@
 #ifndef ARX_GRAPHICS_RENDERER_H
 #define ARX_GRAPHICS_RENDERER_H
 
+#include <deque>
 #include <vector>
 
 #include "platform/Flags.h"
@@ -124,27 +125,57 @@ public:
 		Stream
 	};
 	
-	struct RendererConfiguration
+	struct configuration
 	{
+		configuration();
+		configuration(const configuration &old);
+
 		struct dirty_flags
 		{
-			bool RenderState[nRenderStates];
+			bool renderstate[nRenderStates];
 			bool alphafunc;
 			bool blendfunc;
+			bool fogcolor;
+			bool fogmode;
+			bool antialiasing;
+			bool culling;
+			bool depthbias;
+			bool fillmode;
 		};
 
 		struct state_struct
 		{
-			// set render state
-			bool RenderState[nRenderStates];
+			// render state
+			bool renderstate[nRenderStates];
 
-			// set alpha func
+			// alpha func
 			PixelCompareFunc alphafunc;
 			float alphafef;
 
-			// set blend func
+			// blend func
 			PixelBlendingFactor blendsrcFactor;
 			PixelBlendingFactor blenddstFactor;
+
+			// fog color
+			Color fogcolor;
+
+			// fog params
+			FogMode fogMode;
+			float fogStart;
+			float fogEnd;
+			float fogDensity;
+
+			// antialiasing
+			bool antialiasing;
+
+			// culling
+			CullingMode cullingmode;
+
+			// depth bias
+			int depthbias;
+
+			// fill mode
+			FillMode fillmode;
 		};
 
 		state_struct state;
@@ -179,14 +210,11 @@ public:
 	virtual Texture2D * CreateTexture2D() = 0;
 	
 	// Render states
-	void PushRendererConfiguration();
-	void PopRendererConfiguration();
-
 	void SetRenderState(const RenderState &i, const bool &enable)
 	{
-		RendererConfiguration *config = RendererConfigurationStack.back();
-		config->dirty.RenderState[i] = true;
-		config->state.RenderState[i] = enable;
+		configuration &config = stack.back();
+		config.dirty.renderstate[i] = true;
+		config.state.renderstate[i] = enable;
 		ApplyRenderState(i, enable);
 	}
 	virtual void ApplyRenderState(const RenderState &i, const bool &enable) = 0;
@@ -194,10 +222,10 @@ public:
 	// Alphablending & Transparency
 	void SetAlphaFunc(const PixelCompareFunc &func, const float &fef) // Ref = [0.0f, 1.0f]
 	{
-		RendererConfiguration *config = RendererConfigurationStack.back();
-		config->dirty.alphafunc = true;
-		config->state.alphafunc = func;
-		config->state.alphafef = fef;
+		configuration &config = stack.back();
+		config.dirty.alphafunc = true;
+		config.state.alphafunc = func;
+		config.state.alphafef = fef;
 		ApplyAlphaFunc(func, fef);
 	}
 
@@ -205,10 +233,10 @@ public:
 
 	void SetBlendFunc(const PixelBlendingFactor &srcFactor, const PixelBlendingFactor &dstFactor)
 	{
-		RendererConfiguration *config = RendererConfigurationStack.back();
-		config->dirty.blendfunc = true;
-		config->state.blendsrcFactor = srcFactor;
-		config->state.blenddstFactor = dstFactor;
+		configuration &config = stack.back();
+		config.dirty.blendfunc = true;
+		config.state.blendsrcFactor = srcFactor;
+		config.state.blenddstFactor = dstFactor;
 		ApplyBlendFunc(srcFactor, dstFactor);
 	}
 	
@@ -257,13 +285,16 @@ public:
 	virtual bool getSnapshot(Image & image) = 0;
 	virtual bool getSnapshot(Image & image, size_t width, size_t height) = 0;
 	
+	void push();
+	void pop();
+
 protected:
 	
 	std::vector<TextureStage *> m_TextureStages;
 
 private:
 	
-	std::vector<RendererConfiguration *> RendererConfigurationStack;
+	std::deque<configuration> stack;
 };
 
 DECLARE_FLAGS_OPERATORS(Renderer::BufferFlags)

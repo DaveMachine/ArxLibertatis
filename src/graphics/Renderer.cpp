@@ -51,9 +51,9 @@ Renderer::~Renderer() {
 		delete m_TextureStages[i];
 	}
 
-	arx_assert(!RendererConfigurationStack.empty());
-	RendererConfigurationStack.pop_back();
-	arx_assert(RendererConfigurationStack.empty());
+	arx_assert(!stack.empty());
+	stack.pop_back();
+	arx_assert(stack.empty());
 }
 
 void Renderer::SetViewMatrix(const Vec3f & position, const Vec3f & dir, const Vec3f & up) {
@@ -67,50 +67,53 @@ void Renderer::SetViewMatrix(const Vec3f & position, const Vec3f & dir, const Ve
 Renderer::Renderer()
 {
 	// stack must always contain at least current state
-	RendererConfiguration *config = new RendererConfiguration;
-	memset(config, 0, sizeof(RendererConfiguration));
-	RendererConfigurationStack.push_back(config);
+	stack.push_back(configuration());
+	configuration &config = stack.back();
+	memset(&config, 0, sizeof(configuration));
 }
 
-void Renderer::PushRendererConfiguration()
+Renderer::configuration::configuration(const configuration &old)
 {
-	RendererConfiguration *old = RendererConfigurationStack.back();
-
-	// allocate a new configuration state and copy the current configuration there
-	RendererConfiguration *config = new RendererConfiguration;
-	memcpy(&config->state, &old->state, sizeof(RendererConfiguration::state_struct));
-	memset(&config->dirty, 0, sizeof(RendererConfiguration::dirty_flags));
-
-	RendererConfigurationStack.push_back(config);
+	memcpy(&state, &old.state, sizeof(state_struct));
+	memset(&dirty, 0, sizeof(dirty_flags));
 }
 
-void Renderer::PopRendererConfiguration()
+Renderer::configuration::configuration()
 {
-	arx_assert(!RendererConfigurationStack.empty());
-	RendererConfiguration *config = RendererConfigurationStack.back();
-	RendererConfigurationStack.pop_back();
-	arx_assert(!RendererConfigurationStack.empty());
-	RendererConfiguration *old = RendererConfigurationStack.back();
+	memset(&state, 0, sizeof(state_struct));
+	memset(&dirty, 0, sizeof(dirty_flags));
+}
+
+void Renderer::push()
+{
+	stack.push_back(configuration(stack.back()));
+}
+
+void Renderer::pop()
+{
+	configuration &config = stack.back();
+	configuration &old = *(stack.end() - 1);
 
 	for (int i = 0; i < nRenderStates; i++)
 	{
-		if (config->dirty.RenderState[i])
+		if (config.dirty.renderstate[i])
 		{
-			ApplyRenderState((RenderState)i, old->state.RenderState[i]);
+			ApplyRenderState((RenderState)i, old.state.renderstate[i]);
 		}
 	}
 
-	if (config->dirty.alphafunc)
+	if (config.dirty.alphafunc)
 	{
-		ApplyAlphaFunc(config->state.alphafunc, config->state.alphafef);
+		ApplyAlphaFunc(config.state.alphafunc, config.state.alphafef);
 	}
 
-	if (config->dirty.blendfunc)
+	if (config.dirty.blendfunc)
 	{
-		ApplyBlendFunc(config->state.blendsrcFactor, config->state.blenddstFactor);
+		ApplyBlendFunc(config.state.blendsrcFactor, config.state.blenddstFactor);
 	}
 
 	// ...
 
-	delete config;
+	stack.pop_back();
+	arx_assert(!stack.empty());
 }
