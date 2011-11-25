@@ -19,4 +19,40 @@
 
 #include "graphics/texture/TextureStage.h"
 
-TextureStage::TextureStage(unsigned int stage) : mStage(stage) { }
+#include "platform/Platform.h"
+
+TextureStage::TextureStage(unsigned int stage) : mStage(stage) 
+{ 
+	// stack must always contain at least current state
+	stack.push_back(configuration());
+	configuration &config = stack.back();
+	memset(&config, 0, sizeof(configuration));
+}
+
+void TextureStage::push()
+{
+	stack.push_back(configuration(stack.back()));
+}
+
+void TextureStage::pop()
+{
+	configuration &config = stack.back();
+	configuration &old = *(stack.end() - 1);
+
+	// ...
+
+	stack.pop_back();
+	arx_assert(!stack.empty());
+}
+
+TextureStage::configuration::configuration()
+{
+	memset(&state, 0, sizeof(state_struct));
+	memset(&dirty, 0, sizeof(dirty_flags));
+}
+
+TextureStage::configuration::configuration(const configuration &old)
+{
+	memcpy(&state, &old.state, sizeof(state_struct));
+	memset(&dirty, 0, sizeof(dirty_flags));
+}

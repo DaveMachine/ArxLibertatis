@@ -20,7 +20,7 @@
 #ifndef ARX_GRAPHICS_TEXTURE_TEXTURESTAGE_H
 #define ARX_GRAPHICS_TEXTURE_TEXTURESTAGE_H
 
-#include <vector>
+#include <deque>
 
 class Texture;
 
@@ -62,8 +62,11 @@ public:
 		FilterLinear   //!< Bilinear interpolation filtering. A weighted average of a 2×2 area of texels surrounding the desired pixel is used.
 	};
 	
-	struct texturestagestate
+	struct configuration
 	{
+		configuration();
+		configuration(const configuration &old);
+
 		struct dirty_flags
 		{
 			bool color;
@@ -142,7 +145,7 @@ protected:
 	
 private:
 
-	std::vector<texturestagestate *> stack;
+	std::deque<configuration> stack;
 };
 
 
