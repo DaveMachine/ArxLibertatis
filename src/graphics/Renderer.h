@@ -210,6 +210,11 @@ public:
 	virtual Texture2D * CreateTexture2D() = 0;
 	
 	// Render states
+	bool GetRenderState(const RenderState &i) {
+		configuration &config = stack.back();
+		return config.state.renderstate[i];
+	}
+
 	void SetRenderState(const RenderState &i, const bool &enable)
 	{
 		configuration &config = stack.back();

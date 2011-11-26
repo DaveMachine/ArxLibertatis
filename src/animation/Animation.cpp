@@ -877,10 +877,25 @@ static void PopOneTriangleListTransparency(TextureContainer *_pTex) {
 }
 
 void PopAllTriangleList() {
+
+	// GRenderer->push();
+	// it's much quicker to do manually in some cases
+	bool alpha_blending = GRenderer->GetRenderState(Renderer::AlphaBlending);
+	
+	if (alpha_blending)
+	{
+		GRenderer->SetRenderState(Renderer::AlphaBlending, false);
+	}
+
 	TextureContainer * pTex = GetTextureList();
 	while(pTex) {
 		PopOneTriangleList(pTex);
 		pTex = pTex->m_pNext;
+	}
+
+	if (alpha_blending)
+	{
+		GRenderer->SetRenderState(Renderer::AlphaBlending, true);
 	}
 }
 
@@ -928,6 +943,7 @@ void PopOneInterZMapp(TextureContainer *_pTex)
 //-----------------------------------------------------------------------------
 void PopAllTriangleListTransparency() {
 
+	GRenderer->push();
 	GRenderer->SetFogColor(Color::none);
 	GRenderer->SetRenderState(Renderer::AlphaBlending, true);
 	GRenderer->SetRenderState(Renderer::DepthWrite, false);
@@ -947,9 +963,10 @@ void PopAllTriangleListTransparency() {
 		pTex=pTex->m_pNext;
 	}
 
+	// TODO fog color not yet handled by render stack
+	// when it is, remove this
 	GRenderer->SetFogColor(ulBKGColor);
-	GRenderer->SetRenderState(Renderer::AlphaBlending, false);
-	GRenderer->SetRenderState(Renderer::DepthWrite, true);
+	GRenderer->pop();
 }
 
 float INVISIBILITY_OVERRIDE=0.f;

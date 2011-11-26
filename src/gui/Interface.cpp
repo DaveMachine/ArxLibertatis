@@ -6643,11 +6643,8 @@ void ARX_INTERFACE_ManageOpenedBook()
 
 		if(ARXmenu.currentmode == AMCM_NEWQUEST) {
 			GRenderer->GetTextureStage(0)->SetMipFilter(TextureStage::FilterNone);
-			GRenderer->SetRenderState(Renderer::AlphaBlending, false);
 			PopAllTriangleList();
-			GRenderer->SetRenderState(Renderer::AlphaBlending, true);
 			PopAllTriangleListTransparency();
-			GRenderer->SetRenderState(Renderer::AlphaBlending, false);
 			GRenderer->GetTextureStage(0)->SetMipFilter(TextureStage::FilterLinear);
 		}
 
@@ -8594,7 +8591,7 @@ void ARX_INTERFACE_RenderCursorInternal(long flag)
 					
 					if(surf) {
 						
-						GRenderer->PushRendererConfiguration();
+						GRenderer->push();
 						GRenderer->SetRenderState(Renderer::AlphaBlending, true);
 						GRenderer->SetBlendFunc(Renderer::BlendOne, Renderer::BlendOne);
 						
@@ -8604,7 +8601,7 @@ void ARX_INTERFACE_RenderCursorInternal(long flag)
 						EERIEDrawBitmap(POSX, POSY, float(surf->m_dwWidth),
 						                float(surf->m_dwHeight), 0.f, surf, Color::gray(.5f));
 						
-						GRenderer->PopRendererConfiguration();
+						GRenderer->pop();
 					}
 				}
 			}

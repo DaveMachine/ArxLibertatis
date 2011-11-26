@@ -5154,7 +5154,7 @@ void MenuCursor::DrawCursor()
 {
 	if (bDrawCursor)
 	{
-		GRenderer->PushRendererConfiguration();
+		GRenderer->push();
 
 		GRenderer->SetRenderState(Renderer::AlphaBlending, true);
 		DrawLine2D(iOldCoord, iNbOldCoord, 10.f, .725f, .619f, 0.56f);
@@ -5206,7 +5206,7 @@ void MenuCursor::DrawCursor()
 			lFrameDiff=0;
 		}
 
-		GRenderer->PopRendererConfiguration();
+		GRenderer->pop();
 	}
 }
 
