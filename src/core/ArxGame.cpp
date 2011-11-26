@@ -1916,12 +1916,8 @@ finish:; //----------------------------------------------------------------
 
 			GRenderer->GetTextureStage(0)->SetWrapMode(TextureStage::WrapRepeat);
 
-			GRenderer->PushRendererConfiguration();
-			GRenderer->SetRenderState(Renderer::AlphaBlending, false);
 			PopAllTriangleList();
-			GRenderer->SetRenderState(Renderer::AlphaBlending, true);
 			PopAllTriangleListTransparency();
-			GRenderer->PopRendererConfiguration();
 
 			GRenderer->SetRenderState(Renderer::Fog, true);
 			this->GoFor2DFX();
@@ -2325,14 +2321,14 @@ void ArxGame::render_particles()
 			pParticleManager->Render();
 		}
 
-		GRenderer->PushRendererConfiguration();
+		GRenderer->push();
 		GRenderer->SetBlendFunc(Renderer::BlendOne, Renderer::BlendOne);
 		GRenderer->SetRenderState(Renderer::DepthWrite, false);
 		GRenderer->SetRenderState(Renderer::AlphaBlending, true);
 		ARX_FOGS_Render();
 		ARX_PARTICLES_Render(&subj);
 		UpdateObjFx();
-		GRenderer->PopRendererConfiguration();
+		GRenderer->pop();
 
 	}
 }
@@ -2345,11 +2341,8 @@ void ArxGame::render_cursor()
 	{
 		ARX_INTERFACE_RenderCursor();
 
-		GRenderer->SetRenderState(Renderer::AlphaBlending, false);
 		PopAllTriangleList();
-		GRenderer->SetRenderState(Renderer::AlphaBlending, true);
 		PopAllTriangleListTransparency();
-		GRenderer->SetRenderState(Renderer::AlphaBlending, false);
 
 		ARX_INTERFACE_HALO_Flush();
 	}
