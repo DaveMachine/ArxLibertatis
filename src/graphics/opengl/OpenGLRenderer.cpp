@@ -495,7 +495,7 @@ void OpenGLRenderer::Clear(BufferFlags bufferFlags, Color clearColor, float clea
 	CHECK_GL;
 }
 
-void OpenGLRenderer::SetFogColor(Color color) {
+void OpenGLRenderer::ApplyFogColor(Color color) {
 	Color4f colorf = color.to<float>();
 	GLfloat fogColor[4]= {colorf.r, colorf.g, colorf.b, colorf.a};
 	glFogfv(GL_FOG_COLOR, fogColor);
@@ -510,7 +510,7 @@ static const GLint arxToGlFogMode[] = {
 };
 
 
-void OpenGLRenderer::SetFogParams(FogMode fogMode, float fogStart, float fogEnd, float fogDensity) {
+void OpenGLRenderer::ApplyFogParams(FogMode fogMode, float fogStart, float fogEnd, float fogDensity) {
 	
 	glFogi(GL_FOG_MODE, arxToGlFogMode[fogMode]);
 	
@@ -521,7 +521,7 @@ void OpenGLRenderer::SetFogParams(FogMode fogMode, float fogStart, float fogEnd,
 	CHECK_GL;
 }
 
-void OpenGLRenderer::SetAntialiasing(bool enable) {
+void OpenGLRenderer::ApplyAntialiasing(bool enable) {
 	
 	// This is mostly useless as multisampling must be enabled/disabled at GL context creation.
 	setGLState(GL_MULTISAMPLE, enable);
@@ -535,7 +535,7 @@ static const GLenum arxToGlCullMode[] = {
 	GL_FRONT, // CullCCW,
 };
 
-void OpenGLRenderer::SetCulling(CullingMode mode) {
+void OpenGLRenderer::ApplyCulling(CullingMode mode) {
 	if(mode == CullNone) {
 		glDisable(GL_CULL_FACE);
 	} else {
@@ -545,7 +545,7 @@ void OpenGLRenderer::SetCulling(CullingMode mode) {
 	CHECK_GL;
 }
 
-void OpenGLRenderer::SetDepthBias(int depthBias) {
+void OpenGLRenderer::ApplyDepthBias(int depthBias) {
 	
 	float bias = -(float)depthBias;
 	
@@ -560,7 +560,7 @@ static const GLenum arxToGlFillMode[] = {
 	GL_FILL,  // FillSolid
 };
 
-void OpenGLRenderer::SetFillMode(FillMode mode) {
+void OpenGLRenderer::ApplyFillMode(FillMode mode) {
 	glPolygonMode(GL_FRONT_AND_BACK, arxToGlFillMode[mode]);
 	CHECK_GL;
 }

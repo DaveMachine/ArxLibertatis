@@ -104,12 +104,42 @@ void Renderer::pop()
 
 	if (config.dirty.alphafunc)
 	{
-		ApplyAlphaFunc(config.state.alphafunc, config.state.alphafef);
+		ApplyAlphaFunc(old.state.alphafunc, old.state.alphafef);
+	}
+
+	if (config.dirty.antialiasing)
+	{
+		ApplyAntialiasing(old.state.antialiasing);
 	}
 
 	if (config.dirty.blendfunc)
 	{
-		ApplyBlendFunc(config.state.blendsrcFactor, config.state.blenddstFactor);
+		ApplyBlendFunc(old.state.blendsrcFactor, old.state.blenddstFactor);
+	}
+
+	if (config.dirty.culling)
+	{
+		ApplyCulling(old.state.cullingmode);
+	}
+
+	if (config.dirty.depthbias)
+	{
+		ApplyDepthBias(old.state.depthbias);
+	}
+
+	if (config.dirty.fillmode)
+	{
+		ApplyFillMode(old.state.fillmode);
+	}
+
+	if (config.dirty.fogcolor)
+	{
+		ApplyFogColor(old.state.fogcolor);
+	}
+
+	if (config.dirty.fogparams)
+	{
+		ApplyFogParams(old.state.fogMode, old.state.fogStart, old.state.fogEnd, old.state.fogDensity);
 	}
 
 	// ...

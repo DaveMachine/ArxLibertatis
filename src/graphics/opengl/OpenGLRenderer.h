@@ -76,14 +76,14 @@ public:
 	void Clear(BufferFlags bufferFlags, Color clearColor = Color::none, float clearDepth = 1.f, size_t nrects = 0, Rect * rect = 0);
 	
 	// Fog
-	void SetFogColor(Color color);
-	void SetFogParams(FogMode fogMode, float fogStart, float fogEnd, float fogDensity = 1.0f);
+	void ApplyFogColor(Color color);
+	void ApplyFogParams(FogMode fogMode, float fogStart, float fogEnd, float fogDensity = 1.0f);
 	
 	// Rasterizer
-	void SetAntialiasing(bool enable);
-	void SetCulling(CullingMode mode);
-	void SetDepthBias(int depthBias);
-	void SetFillMode(FillMode mode);
+	void ApplyAntialiasing(bool enable);
+	void ApplyCulling(CullingMode mode);
+	void ApplyDepthBias(int depthBias);
+	void ApplyFillMode(FillMode mode);
 	
 	inline float GetMaxAnisotropy() const { return maximumAnisotropy; }
 	
