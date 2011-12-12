@@ -21,14 +21,13 @@
 
 #include "platform/Platform.h"
 
-#include <memory.h>
-
 TextureStage::TextureStage(unsigned int stage) : mStage(stage) 
 { 
 	// stack must always contain at least current state
 	stack.push_back(configuration());
 	configuration &config = stack.back();
-	memset(&config, 0, sizeof(configuration));
+	config.dirty.clear();
+	config.state.clear();
 }
 
 void TextureStage::push()
@@ -49,12 +48,12 @@ void TextureStage::pop()
 
 TextureStage::configuration::configuration()
 {
-	memset(&state, 0, sizeof(state_struct));
-	memset(&dirty, 0, sizeof(dirty_flags));
+	dirty.clear();
+	state.clear();
 }
 
 TextureStage::configuration::configuration(const configuration &old)
 {
-	memcpy(&state, &old.state, sizeof(state_struct));
-	memset(&dirty, 0, sizeof(dirty_flags));
+	dirty.clear();
+	state = old.state;
 }

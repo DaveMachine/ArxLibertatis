@@ -23,8 +23,6 @@
 #include "graphics/data/TextureContainer.h"
 #include "graphics/texture/Texture.h"
 
-#include <memory.h>
-
 Renderer * GRenderer;
 
 TextureStage * Renderer::GetTextureStage(unsigned int textureStage) {
@@ -71,19 +69,20 @@ Renderer::Renderer()
 	// stack must always contain at least current state
 	stack.push_back(configuration());
 	configuration &config = stack.back();
-	memset(&config, 0, sizeof(configuration));
+	config.dirty.clear();
+	config.state.clear();
 }
 
 Renderer::configuration::configuration(const configuration &old)
 {
-	memcpy(&state, &old.state, sizeof(state_struct));
-	memset(&dirty, 0, sizeof(dirty_flags));
+	dirty.clear();
+	state = old.state;
 }
 
 Renderer::configuration::configuration()
 {
-	memset(&state, 0, sizeof(state_struct));
-	memset(&dirty, 0, sizeof(dirty_flags));
+	dirty.clear();
+	state.clear();
 }
 
 void Renderer::push()

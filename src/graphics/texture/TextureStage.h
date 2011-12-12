@@ -69,6 +69,16 @@ public:
 
 		struct dirty_flags
 		{
+			void  clear()
+			{
+				color = false;
+				alpha = false;
+				wrap = false;
+				min = false;
+				mag = false;
+				mip = false;
+				lod = false;
+			}
 			bool color;
 			bool alpha;
 			bool wrap;
@@ -80,6 +90,25 @@ public:
 
 		struct state_struct
 		{
+			void clear()
+			{
+				colorop = OpDisable;
+				colorarg1 = ArgDiffuse;
+				colorarg2 = ArgDiffuse;
+				colorenabled = false;
+
+				alphaop = OpDisable;
+				alphaarg1 = ArgDiffuse;
+				alphaarg2 = ArgDiffuse;
+				alphaenabled = false;
+
+				wrapmode = WrapRepeat;
+
+				min = FilterNone;
+				mag = FilterNone;
+				mip = FilterNone;
+				lod = 0.0f;
+			}
 			// color op
 			TextureOp colorop;
 			TextureArg colorarg1;

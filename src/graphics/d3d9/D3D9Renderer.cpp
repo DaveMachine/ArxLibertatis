@@ -322,12 +322,12 @@ void D3D9Renderer::ApplyRenderState(const RenderState &renderState, const bool &
 	}
 }
 
-void D3D9Renderer::ApplyAlphaFunc(PixelCompareFunc func, float fef) {
+void D3D9Renderer::ApplyAlphaFunc(const PixelCompareFunc &func, const float &fef) {
 	GD3D9Device->SetRenderState(D3DRS_ALPHAREF, (DWORD)fef*255);
 	GD3D9Device->SetRenderState(D3DRS_ALPHAFUNC, ARXToDXPixelCompareFunc[func]);
 }
 
-void D3D9Renderer::ApplyBlendFunc(PixelBlendingFactor srcFactor, PixelBlendingFactor dstFactor) {
+void D3D9Renderer::ApplyBlendFunc(const PixelBlendingFactor &srcFactor, const PixelBlendingFactor &dstFactor) {
 	GD3D9Device->SetRenderState(D3DRS_SRCBLEND,  ARXToDXPixelBlendingFactor[srcFactor]);
 	GD3D9Device->SetRenderState(D3DRS_DESTBLEND, ARXToDXPixelBlendingFactor[dstFactor]);
 }

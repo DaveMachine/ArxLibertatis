@@ -132,6 +132,22 @@ public:
 
 		struct dirty_flags
 		{
+			void clear()
+			{
+				for (int i = 0; i < nRenderStates; i++)
+				{
+					renderstate[i] = false;
+				}
+
+				alphafunc = false;
+				blendfunc = false;
+				fogcolor = false;
+				fogparams = false;
+				antialiasing = false;
+				culling = false;
+				depthbias = false;
+				fillmode = false;
+			}
 			bool renderstate[nRenderStates];
 			bool alphafunc;
 			bool blendfunc;
@@ -145,6 +161,35 @@ public:
 
 		struct state_struct
 		{
+			void clear()
+			{
+				for (int i = 0; i < nRenderStates; i++)
+				{
+					renderstate[i] = false;
+				}
+
+				alphafunc = CmpNever;
+				alphafef = 0.0f;
+
+				blendsrcFactor = BlendZero;
+				blenddstFactor = BlendZero;
+
+				fogcolor.gray(0.0f);
+
+				fogMode = FogNone;
+				fogStart = 0.0f;
+				fogEnd = 0.0f;
+				fogDensity = 0.0f;
+
+				antialiasing = false;
+
+				cullingmode = CullNone;
+
+				depthbias = 0;
+
+				fillmode = FillPoint;
+			}
+
 			/// render state
 			bool renderstate[nRenderStates];
 
