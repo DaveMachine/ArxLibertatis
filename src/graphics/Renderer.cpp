@@ -23,6 +23,8 @@
 #include "graphics/data/TextureContainer.h"
 #include "graphics/texture/Texture.h"
 
+#include <memory.h>
+
 Renderer * GRenderer;
 
 TextureStage * Renderer::GetTextureStage(unsigned int textureStage) {

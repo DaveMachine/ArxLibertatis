@@ -21,6 +21,8 @@
 
 #include "platform/Platform.h"
 
+#include <memory.h>
+
 TextureStage::TextureStage(unsigned int stage) : mStage(stage) 
 { 
 	// stack must always contain at least current state
