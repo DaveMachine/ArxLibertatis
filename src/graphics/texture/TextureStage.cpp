@@ -37,8 +37,9 @@ void TextureStage::push()
 
 void TextureStage::pop()
 {
-	configuration &config = stack.back();
-	configuration &old = *(stack.end() - 1);
+	// just to prevent unused var warning
+	//configuration &config = stack.back();
+	//configuration &old = *(stack.end() - 1);
 
 	// ...
 
