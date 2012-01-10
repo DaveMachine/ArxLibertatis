@@ -84,42 +84,46 @@ aalError init(const string & backendName, bool enableEAX) {
 	
 	bool autoBackend = (backendName == "auto");
 	aalError error;
-	bool matched = false;
 	
-#ifdef HAVE_OPENAL
-	if(autoBackend || backendName == "OpenAL") {
-		matched = true;
-		LogDebug("initializing OpenAL backend");
-		OpenALBackend * _backend = new OpenALBackend();
-		if(!(error = _backend->init(enableEAX))) {
-			backend = _backend;
-		} else {
-			delete _backend;
+	for(int i = 0; i < 2 && !backend; i++) {
+		bool first = (i == 0);
+		
+		bool matched = false;
+		
+		#ifdef HAVE_OPENAL
+		if(!backend && first == (autoBackend || backendName == "OpenAL")) {
+			matched = true;
+			LogDebug("initializing OpenAL backend");
+			OpenALBackend * _backend = new OpenALBackend();
+			if(!(error = _backend->init(enableEAX))) {
+				backend = _backend;
+			} else {
+				delete _backend;
+			}
+		}
+		#endif
+		
+		#ifdef HAVE_DSOUND
+		if(!backend && first == (autoBackend || backendName == "DirectSound")) {
+			matched = true;
+			LogDebug("initializing DirectSound backend");
+			DSoundBackend * _backend = new DSoundBackend();
+			if(!(error = _backend->init(enableEAX))) {
+				backend = _backend;
+			} else {
+				delete _backend;
+			}
+		}
+		#endif
+			
+		if(first && !matched) {
+			LogError << "unknown backend: " << backendName;
 		}
 	}
-#endif
 	
-#ifdef HAVE_DSOUND
-	if(!backend && (autoBackend || backendName == "DirectSound")) {
-		matched = true;
-		LogDebug("initializing DirectSound backend");
-		DSoundBackend * _backend = new DSoundBackend();
-		if(!(error = _backend->init(enableEAX))) {
-			backend = _backend;
-		} else {
-			delete _backend;
-		}
-	}
-#endif
-	
-#if !defined(HAVE_OPENAL) && !defined(HAVE_DSOUND)
-	ARX_UNUSED(autoBackend), ARX_UNUSED(enableEAX);
-#endif
-	
-	if(!matched) {
-		LogError << "unknown backend: " << backendName;
-		return AAL_ERROR_SYSTEM;
-	}
+	#if !defined(HAVE_OPENAL) && !defined(HAVE_DSOUND)
+		ARX_UNUSED(autoBackend), ARX_UNUSED(enableEAX);
+	#endif
 	
 	if(!backend) {
 		LogError << "no working backend available";
@@ -178,7 +182,7 @@ aalError setStreamLimit(size_t limit) {
 	return AAL_OK;
 }
 
-aalError setSamplePath(const fs::path & path) {
+aalError setSamplePath(const res::path & path) {
 	
 	AAL_ENTRY
 	
@@ -187,7 +191,7 @@ aalError setSamplePath(const fs::path & path) {
 	return AAL_OK;
 }
 
-aalError setAmbiancePath(const fs::path & path) {
+aalError setAmbiancePath(const res::path & path) {
 	
 	AAL_ENTRY
 	
@@ -196,7 +200,7 @@ aalError setAmbiancePath(const fs::path & path) {
 	return AAL_OK;
 }
 
-aalError setEnvironmentPath(const fs::path & path) {
+aalError setEnvironmentPath(const res::path & path) {
 	
 	AAL_ENTRY
 	
@@ -266,7 +270,7 @@ MixerId createMixer() {
 	return id;
 }
 
-SampleId createSample(const fs::path & name) {
+SampleId createSample(const res::path & name) {
 	
 	AAL_ENTRY_V(INVALID_ID)
 	
@@ -282,7 +286,7 @@ SampleId createSample(const fs::path & name) {
 	return Backend::clearSource(s_id);
 }
 
-AmbianceId createAmbiance(const fs::path & name) {
+AmbianceId createAmbiance(const res::path & name) {
 	
 	AAL_ENTRY_V(INVALID_ID)
 	
@@ -296,7 +300,7 @@ AmbianceId createAmbiance(const fs::path & name) {
 	return a_id;
 }
 
-EnvId createEnvironment(const fs::path & name) {
+EnvId createEnvironment(const res::path & name) {
 	
 	AAL_ENTRY_V(INVALID_ID)
 	
@@ -335,7 +339,7 @@ aalError deleteAmbiance(AmbianceId a_id) {
 	return AAL_OK;
 }
 
-AmbianceId getAmbiance(const fs::path & name) {
+AmbianceId getAmbiance(const res::path & name) {
 	
 	AAL_ENTRY_V(INVALID_ID)
 	
@@ -348,7 +352,7 @@ AmbianceId getAmbiance(const fs::path & name) {
 	return INVALID_ID;
 }
 
-EnvId getEnvironment(const fs::path & name) {
+EnvId getEnvironment(const res::path & name) {
 	
 	AAL_ENTRY_V(INVALID_ID)
 	
@@ -562,7 +566,7 @@ aalError setSamplePosition(SourceId sample_id, const Vec3f & position) {
 
 // Sample status
 
-aalError getSampleName(SampleId sample_id, fs::path & name) {
+aalError getSampleName(SampleId sample_id, res::path & name) {
 	
 	name.clear();
 	
@@ -731,7 +735,7 @@ aalError setAmbianceVolume(AmbianceId a_id, float volume) {
 
 // Ambiance status
 
-aalError getAmbianceName(AmbianceId a_id, fs::path & name) {
+aalError getAmbianceName(AmbianceId a_id, res::path & name) {
 	
 	name.clear();
 	

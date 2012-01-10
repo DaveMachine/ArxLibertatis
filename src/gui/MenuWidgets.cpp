@@ -60,6 +60,7 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #include "core/Core.h"
 #include "core/GameTime.h"
 #include "core/Localisation.h"
+#include "core/SaveGame.h"
 #include "core/Version.h"
 
 #include "gui/Menu.h"
@@ -78,6 +79,7 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 
 #include "input/Input.h"
 
+#include "scene/ChangeLevel.h"
 #include "scene/GameSound.h"
 #include "scene/LoadLevel.h"
 
@@ -159,12 +161,9 @@ float fFadeInOut=0.f;
 
 void ARX_MENU_Clicked_CREDITS();
 void ARX_MENU_Clicked_NEWQUEST();
-long ARX_CHANGELEVEL_Load(long);
 
 TextureContainer *pTextureLoad=NULL;
 static TextureContainer *pTextureLoadRender=NULL;
-
-const char QUICK_SAVE_ID[] = "ARX_QUICK_ARX";
 
 int iTimeToDrawD7=-3000;
 
@@ -174,35 +173,13 @@ void ARX_QuickSave() {
 		return;
 	}
 	
-	CreateSaveGameList();
-	
 	int iOldGamma = config.video.gamma;
 	ARXMenu_Options_Video_SetGamma((iOldGamma - 1) < 0 ? 0 : (iOldGamma - 1));
 	
 	ARX_SOUND_MixerPause(ARX_SOUND_MixerGame);
 	
-	size_t num = 0;
-	std::time_t time = std::numeric_limits<std::time_t>::max();
+	savegames.quicksave(savegame_thumbnail);
 	
-	size_t nfound = 0;
-	
-	// Find the oldest quicksave.
-	for(size_t i = 1; i < save_l.size(); i++) {
-		if(save_l[i].quicksave) {
-			nfound++;
-			if(save_l[i].stime < time) {
-				num = i, time = save_l[i].stime;
-			}
-		}
-	}
-	if(nfound < (size_t)config.misc.quicksaveSlots) {
-		num = 0;
-	}
-	if(num == 0) {
-		save_l[0].name = QUICK_SAVE_ID;
-	}
-	
-	UpdateSaveGame(num);
 	ARXMenu_Options_Video_SetGamma(iOldGamma);
 	ARX_SOUND_MixerResume(ARX_SOUND_MixerGame);
 }
@@ -241,21 +218,9 @@ void ARX_DrawAfterQuickLoad() {
 
 bool ARX_QuickLoad() {
 	
-	CreateSaveGameList();
-	
-	// Find the newest quicksave.
-	size_t num = 0;
-	std::time_t time = std::numeric_limits<std::time_t>::min();
-	for(size_t i = 1; i < save_l.size(); i++) {
-		if(save_l[i].stime > time) {
-			if(save_l[i].quicksave) {
-				num = i, time = save_l[i].stime;
-			}
-		}
-	}
-	
-	if(num == 0) {
-		// No quicksave found!
+	SaveGameList::iterator save = savegames.quickload();
+	if(save == savegames.end()) {
+		// No saves found!
 		return false;
 	}
 	
@@ -265,11 +230,11 @@ bool ARX_QuickLoad() {
 	PROGRESS_BAR_TOTAL = 238;
 	OLD_PROGRESS_BAR_COUNT = PROGRESS_BAR_COUNT = 0;
 	PROGRESS_BAR_COUNT += 1.f;
-	LoadLevelScreen(save_l[num].level);
+	LoadLevelScreen(save->level);
 	
 	DanaeClearLevel();
 	
-	ARX_CHANGELEVEL_Load(save_l[num].num);
+	ARX_CHANGELEVEL_Load(save->savefile);
 	
 	REFUSE_GAME_RETURN = 0;
 	ARX_SOUND_MixerResume(ARX_SOUND_MixerGame);
@@ -682,6 +647,7 @@ bool Menu2_Render() {
 
 					szMenuText = getLocalised( "system_menus_main_editquest_load");
 					me = new CMenuElementText(BUTTON_MENUEDITQUEST_LOAD_INIT, hFontMenu, szMenuText, 0, 0, lColor, 1.f, EDIT_QUEST_LOAD);
+					me->lData = -1;
 					pWindowMenuConsole->AddMenuCenter(me);
 
 					szMenuText = getLocalised( "system_menus_main_editquest_save");
@@ -710,6 +676,7 @@ bool Menu2_Render() {
 
 					// LOAD ---------------------------------------------------
 					pWindowMenuConsole=new CWindowMenuConsole(iWindowConsoleOffsetX,iWindowConsoleOffsetY-(40),iWindowConsoleWidth,iWindowConsoleHeight,EDIT_QUEST_LOAD);
+					pWindowMenuConsole->lData = -1;
 					pWindowMenuConsole->iInterligne = 5;
 
 					pTex = TextureContainer::Load("graph/interface/icons/menu_main_load");
@@ -723,42 +690,47 @@ bool Menu2_Render() {
 					// TODO align the date part to the right!
 					
 					{
-					
-					size_t quicksaveNum = 0;
-					
-					for(size_t i = 1; i < save_l.size(); i++) {
 						
-						if(!save_l[i].quicksave) {
-							continue;
+						size_t quicksaveNum = 0;
+						
+						// Show quicksaves.
+						for(size_t i = 0; i < savegames.size(); i++) {
+							const SaveGame & save = savegames[i];
+							
+							if(!save.quicksave) {
+								continue;
+							}
+							
+							std::ostringstream text;
+							text << quicksaveName << ' ' << ++quicksaveNum << "   " << save.time;
+							
+							CMenuElement * e = new CMenuElementText(BUTTON_MENUEDITQUEST_LOAD, hFontControls,
+							                                        text.str(), fPosX1, 0.f, lColor, .8f, NOP);
+							e->lData = i;
+							pWindowMenuConsole->AddMenuCenterY(e);
 						}
 						
-						std::ostringstream text;
-						text << quicksaveName << ' ' << ++quicksaveNum << "   " << save_l[i].time;
-						
-						me = new CMenuElementText(BUTTON_MENUEDITQUEST_LOAD, hFontControls, text.str(), fPosX1, 0.f, lColor, 0.8f, NOP);
-						
-						me->lData = i;
-						pWindowMenuConsole->AddMenuCenterY(me);
-					}
-					
-					// regular quicksaves
-					for(size_t i = 1; i < save_l.size(); i++) {
-						
-						if(save_l[i].quicksave) {
-							continue;
+						// Show regular saves.
+						for(size_t i = 0; i < savegames.size(); i++) {
+							const SaveGame & save = savegames[i];
+							
+							if(save.quicksave) {
+								continue;
+							}
+							
+							string text = save.name +  "   " + save.time;
+							
+							CMenuElement * e = new CMenuElementText(BUTTON_MENUEDITQUEST_LOAD, hFontControls,
+							                                        text, fPosX1, 0.f, lColor, 0.8f, NOP);
+							e->lData = i;
+							pWindowMenuConsole->AddMenuCenterY(e);
 						}
 						
-						string text = save_l[i].name +  "   " + save_l[i].time;
-						
-						me = new CMenuElementText(BUTTON_MENUEDITQUEST_LOAD, hFontControls, text, fPosX1, 0.f, lColor, 0.8f, NOP);
-						
-						me->lData = i;
-						pWindowMenuConsole->AddMenuCenterY(me);
-					}
-
-						me01 = new CMenuElementText(-1, hFontControls, " ", fPosX1, 0.f, lColor, 0.8f, EDIT_QUEST_SAVE_CONFIRM);
-							me01->SetCheckOff();
-							pWindowMenuConsole->AddMenuCenterY((CMenuElementText*)me01);
+						CMenuElement * confirm = new CMenuElementText(-1, hFontControls, " ", fPosX1, 0.f,
+						                                              lColor, 0.8f, EDIT_QUEST_SAVE_CONFIRM);
+						confirm->SetCheckOff();
+						confirm->lData = -1;
+						pWindowMenuConsole->AddMenuCenterY(confirm);
 
 						CMenuPanel *pc = new CMenuPanel();
 						szMenuText = getLocalised("system_menus_main_editquest_load");
@@ -791,59 +763,63 @@ bool Menu2_Render() {
 					me = new CMenuCheckButton(-1, fPosBack, 0, pTex?pTex->m_dwWidth:0, pTex, NULL, NULL);
 					((CMenuCheckButton *)me)->bCheck = false;
 					pWindowMenuConsole->AddMenuCenter(me);
-
-					//QUICK SAVE
-
+					
 					size_t quicksaveNum = 0;
 					
-					// quicksaves
-					for(size_t i = 1; i < save_l.size(); i++) {
+					// Show quicksaves.
+					for(size_t i = 0; i < savegames.size(); i++) {
+						const SaveGame & save = savegames[i];
 						
-						if(!save_l[i].quicksave) {
+						if(!save.quicksave) {
 							continue;
 						}
 						
 						std::ostringstream text;
-						text << quicksaveName << ' ' << ++quicksaveNum << "   " << save_l[i].time;
+						text << quicksaveName << ' ' << ++quicksaveNum << "   " << save.time;
 						
-						me = new CMenuElementText(BUTTON_MENUEDITQUEST_SAVEINFO, hFontControls, text.str(), fPosX1, 0.f, Color(127, 127, 127), 0.8f, EDIT_QUEST_SAVE_CONFIRM);
-						me->SetCheckOff();
-						
-						me->lData = i;
-						pWindowMenuConsole->AddMenuCenterY(me);
+						CMenuElement * e = new CMenuElementText(BUTTON_MENUEDITQUEST_SAVEINFO, hFontControls,
+						                                        text.str(), fPosX1, 0.f, Color::grayb(127),
+						                                        .8f, EDIT_QUEST_SAVE_CONFIRM);
+						e->SetCheckOff();
+						e->lData = i;
+						pWindowMenuConsole->AddMenuCenterY(e);
 					}
 					
-					// regular quicksaves
-					for(size_t i = 1; i < save_l.size(); i++) {
+					// Show regular saves.
+					for(size_t i = 0; i < savegames.size(); i++) {
+						const SaveGame & save = savegames[i];
 						
-						if(save_l[i].quicksave) {
+						if(save.quicksave) {
 							continue;
 						}
 						
-						string text = save_l[i].name +  "   " + save_l[i].time;
+						string text = save.name +  "   " + save.time;
 						
-						me = new CMenuElementText(BUTTON_MENUEDITQUEST_SAVEINFO, hFontControls, text, fPosX1, 0.f, lColor, 0.8f, EDIT_QUEST_SAVE_CONFIRM);
-						
-						me->lData = i;
-						pWindowMenuConsole->AddMenuCenterY(me);
+						CMenuElement * e = new CMenuElementText(BUTTON_MENUEDITQUEST_SAVEINFO, hFontControls,
+						                                        text, fPosX1, 0.f, lColor, .8f,
+						                                        EDIT_QUEST_SAVE_CONFIRM);
+						e->lData = i;
+						pWindowMenuConsole->AddMenuCenterY(e);
 					}
-
+					
 					pTex = TextureContainer::Load("graph/interface/icons/arx_logo_08");
+					
+					for(size_t i = savegames.size(); i <= 15; i++) {
+						
+						std::ostringstream text;
+						text << '-' << std::setfill('0') << std::setw(4) << i << '-';
+						
+						CMenuElementText * e = new CMenuElementText(-1, hFontControls, text.str(), fPosX1,
+						                                            0.f, lColor, .8f,
+						                                            EDIT_QUEST_SAVE_CONFIRM);
 
-					for(int iI=save_l.size(); iI<=15; iI++)
-					{
-						char tex[256];
-						sprintf(tex, "-%04d-"
-
-							,iI);
-						CMenuElementText * me01 = new CMenuElementText(-1, hFontControls, tex, fPosX1, 0.f, lColor, 0.8f, EDIT_QUEST_SAVE_CONFIRM);
-
-						me01->eMenuState=EDIT_QUEST_SAVE_CONFIRM;
-						me01->lData=0;
-						pWindowMenuConsole->AddMenuCenterY((CMenuElementText*)me01);
+						e->eMenuState = EDIT_QUEST_SAVE_CONFIRM;
+						e->lData = -1;
+						pWindowMenuConsole->AddMenuCenterY(e);
 					}
 
 					me01 = new CMenuElementText(-1, hFontControls, " ", fPosX1, 0.f, lColor, 0.8f, EDIT_QUEST_SAVE_CONFIRM);
+					me01->lData = -1;
 					me01->SetCheckOff();
 					pWindowMenuConsole->AddMenuCenterY((CMenuElementText*)me01);
 
@@ -858,6 +834,7 @@ bool Menu2_Render() {
 
 					// SAVE CONFIRM--------------------------------------------
 					pWindowMenuConsole = new CWindowMenuConsole(iWindowConsoleOffsetX,iWindowConsoleOffsetY,iWindowConsoleWidth,iWindowConsoleHeight,EDIT_QUEST_SAVE_CONFIRM);
+					pWindowMenuConsole->lData = -1;
 
 					pTex = TextureContainer::Load("graph/interface/icons/menu_main_save");
 					me = new CMenuCheckButton(-1, 0, 0, pTex?pTex->m_dwWidth:0, pTex, NULL, NULL);
@@ -867,7 +844,7 @@ bool Menu2_Render() {
 					szMenuText = getLocalised("system_menu_editquest_newsavegame", "---");
 
 					me = new CMenuElementText(-1, hFontMenu, szMenuText, fPosX1, 0.f, lColor, 1.f, NOP);
-					me->lData=0;
+					me->lData = -1;
 
 					pWindowMenuConsole->AddMenuCenter(me);
 					me->eState=EDIT;
@@ -924,8 +901,42 @@ bool Menu2_Render() {
 				//------------------ END OPTIONS
 
 				//------------------ START VIDEO
-					pWindowMenuConsole=new CWindowMenuConsole(iWindowConsoleOffsetX,iWindowConsoleOffsetY - (40),iWindowConsoleWidth,iWindowConsoleHeight, OPTIONS_VIDEO);
+					pWindowMenuConsole=new CWindowMenuConsole(iWindowConsoleOffsetX,iWindowConsoleOffsetY - (35),iWindowConsoleWidth,iWindowConsoleHeight, OPTIONS_VIDEO);
 
+					
+					// Renderer selection
+					{
+						
+						pc = new CMenuPanel();
+						szMenuText = getLocalised("system_menus_options_video_renderer", "Renderer");
+						szMenuText += "  ";
+						me = new CMenuElementText(-1, hFontMenu, szMenuText, fPosX1, 0.f, lColor, 1.f, NOP);
+						me->SetCheckOff();
+						pc->AddElement(me);
+						CMenuSliderText * slider = new CMenuSliderText(BUTTON_MENUOPTIONSVIDEO_RENDERER, 0, 0);
+						
+						slider->AddText(new CMenuElementText(-1, hFontMenu, "Auto-Select", 0, 0, lColor, 1.f, OPTIONS_VIDEO_RENDERER_AUTOMATIC));
+						slider->iPos = slider->vText.size() - 1;
+#ifdef HAVE_SDL
+						slider->AddText(new CMenuElementText(-1, hFontMenu, "OpenGL", 0, 0, lColor, 1.f, OPTIONS_VIDEO_RENDERER_OPENGL));
+						if(config.window.framework == "SDL") {
+							slider->iPos = slider->vText.size() - 1;
+						}
+#endif
+#ifdef HAVE_D3D9
+						slider->AddText(new CMenuElementText(-1, hFontMenu, "D3D 9", 0, 0, lColor, 1.f, OPTIONS_VIDEO_RENDERER_D3D9));
+						if(config.window.framework == "D3D9") {
+							slider->iPos = slider->vText.size() - 1;
+						}
+#endif
+						
+						float fRatio    = (RATIO_X(iWindowConsoleWidth-9) - slider->GetWidth()); 
+						slider->Move(checked_range_cast<int>(fRatio), 0); 
+						pc->AddElement(slider);
+						pWindowMenuConsole->AddMenuCenterY(pc);
+						
+					}
+					
 					
 					szMenuText = getLocalised("system_menus_options_videos_full_screen");
 					szMenuText += "  ";
@@ -1151,11 +1162,19 @@ bool Menu2_Render() {
 					metemp = new CMenuElementText(-1, hFontMenu, szMenuText, fPosX1, 0.f, lColor, 1.f, NOP);
 					metemp->SetCheckOff();
 					me = new CMenuCheckButton(BUTTON_MENUOPTIONSVIDEO_ANTIALIASING, 0, 0, pTex1->m_dwWidth, pTex1, pTex2, metemp);
-
 					((CMenuCheckButton*)me)->iState= config.video.antialiasing ? 1 : 0;
-
 					pWindowMenuConsole->AddMenuCenterY(me);
 					ARX_SetAntiAliasing();
+
+					szMenuText = getLocalised("system_menus_options_video_vsync", "VSync");
+					szMenuText += " ";
+					pTex1 = TextureContainer::Load("graph/interface/menus/menu_checkbox_off");
+					pTex2 = TextureContainer::Load("graph/interface/menus/menu_checkbox_on");
+					metemp = new CMenuElementText(-1, hFontMenu, szMenuText, fPosX1, 0.f, lColor, 1.f, NOP);
+					metemp->SetCheckOff();
+					me = new CMenuCheckButton(BUTTON_MENUOPTIONSVIDEO_VSYNC, 0, 0, pTex1->m_dwWidth, pTex1, pTex2, metemp);
+					((CMenuCheckButton*)me)->iState= config.video.vsync ? 1 : 0;
+					pWindowMenuConsole->AddMenuCenterY(me);
 
 					pc = new CMenuPanel();
 					szMenuText = getLocalised("system_menus_video_apply");
@@ -1179,6 +1198,39 @@ bool Menu2_Render() {
 					//------------------ START AUDIO
 					pWindowMenuConsole = new CWindowMenuConsole(iWindowConsoleOffsetX,iWindowConsoleOffsetY,iWindowConsoleWidth,iWindowConsoleHeight,OPTIONS_AUDIO);
 
+					// Audio backend selection
+					{
+						
+						pc = new CMenuPanel();
+						szMenuText = getLocalised("system_menus_options_audio_backend", "Backend");
+						szMenuText += "  ";
+						me = new CMenuElementText(-1, hFontMenu, szMenuText, fPosX1, 0.f, lColor, 1.f, NOP);
+						me->SetCheckOff();
+						pc->AddElement(me);
+						CMenuSliderText * slider = new CMenuSliderText(BUTTON_MENUOPTIONSAUDIO_BACKEND, 0, 0);
+						
+						slider->AddText(new CMenuElementText(-1, hFontMenu, "Auto-Select", 0, 0, lColor, 1.f, OPTIONS_AUDIO_BACKEND_AUTOMATIC));
+						slider->iPos = slider->vText.size() - 1;
+#ifdef HAVE_OPENAL
+						slider->AddText(new CMenuElementText(-1, hFontMenu, "OpenAL", 0, 0, lColor, 1.f, OPTIONS_AUDIO_BACKEND_OPENAL));
+						if(config.audio.backend == "OpenAL") {
+							slider->iPos = slider->vText.size() - 1;
+						}
+#endif
+#ifdef HAVE_DSOUND
+						slider->AddText(new CMenuElementText(-1, hFontMenu, "Direct Sound", 0, 0, lColor, 1.f, OPTIONS_AUDIO_BACKEND_DSOUND));
+						if(config.audio.backend == "DirectSound") {
+							slider->iPos = slider->vText.size() - 1;
+						}
+#endif
+						
+						float fRatio    = (RATIO_X(iWindowConsoleWidth-9) - slider->GetWidth()); 
+						slider->Move(checked_range_cast<int>(fRatio), 0); 
+						pc->AddElement(slider);
+						pWindowMenuConsole->AddMenuCenterY(pc);
+						
+					}
+					
 					pc = new CMenuPanel();
 					szMenuText = getLocalised("system_menus_options_audio_master_volume");
 					me = new CMenuElementText(-1, hFontMenu, szMenuText, fPosX1, 0.f, lColor, 1.f, OPTIONS_AUDIO_VOLUME);
@@ -1240,6 +1292,39 @@ bool Menu2_Render() {
 
 					//------------------ START INPUT
 					pWindowMenuConsole = new CWindowMenuConsole(iWindowConsoleOffsetX,iWindowConsoleOffsetY,iWindowConsoleWidth,iWindowConsoleHeight, OPTIONS_INPUT);
+					
+					// Input backend selection
+					{
+						
+						pc = new CMenuPanel();
+						szMenuText = getLocalised("system_menus_options_input_backend", "Backend");
+						szMenuText += "  ";
+						me = new CMenuElementText(-1, hFontMenu, szMenuText, fPosX1, 0.f, lColor, 1.f, NOP);
+						me->SetCheckOff();
+						pc->AddElement(me);
+						CMenuSliderText * slider = new CMenuSliderText(BUTTON_MENUOPTIONS_CONTROLS_BACKEND, 0, 0);
+						
+						slider->AddText(new CMenuElementText(-1, hFontMenu, "Auto-Select", 0, 0, lColor, 1.f, OPTIONS_INPUT_BACKEND_AUTOMATIC));
+						slider->iPos = slider->vText.size() - 1;
+#ifdef HAVE_SDL
+						slider->AddText(new CMenuElementText(-1, hFontMenu, "SDL", 0, 0, lColor, 1.f, OPTIONS_INPUT_BACKEND_SDL));
+						if(config.input.backend == "SDL") {
+							slider->iPos = slider->vText.size() - 1;
+						}
+#endif
+#ifdef HAVE_DINPUT8
+						slider->AddText(new CMenuElementText(-1, hFontMenu, "DInput 8", 0, 0, lColor, 1.f, OPTIONS_INPUT_BACKEND_DINPUT));
+						if(config.input.backend == "DirectInput8") {
+							slider->iPos = slider->vText.size() - 1;
+						}
+#endif
+						
+						float fRatio    = (RATIO_X(iWindowConsoleWidth-9) - slider->GetWidth()); 
+						slider->Move(checked_range_cast<int>(fRatio), 0); 
+						pc->AddElement(slider);
+						pWindowMenuConsole->AddMenuCenterY(pc);
+						
+					}
 					
 					szMenuText = getLocalised("system_menus_options_input_customize_controls");
 					me = new CMenuElementText(-1, hFontMenu, szMenuText, fPosX1, 0.f, lColor, 1.f, OPTIONS_INPUT_CUSTOMIZE_KEYS_1);
@@ -1306,6 +1391,16 @@ bool Menu2_Render() {
 
 						pWindowMenuConsole->AddMenuCenterY(me);
 					}
+
+					pc = new CMenuPanel();
+					szMenuText = getLocalised("system_menus_options_misc_quicksave_slots", "Quicksave slots");
+					me = new CMenuElementText(-1, hFontMenu, szMenuText, fPosX1, 0.f, lColor, 1.f, NOP);
+					me->SetCheckOff();
+					pc->AddElement(me);
+					me = new CMenuSlider(BUTTON_MENUOPTIONS_CONTROLS_QUICKSAVESLOTS, iPosX2, 0);
+					((CMenuSlider*)me)->setValue(config.misc.quicksaveSlots);
+					pc->AddElement(me);
+					pWindowMenuConsole->AddMenuCenterY(pc);
 
 					pTex = TextureContainer::Load("graph/interface/menus/back");
 					me = new CMenuCheckButton(-1, fPosBack, fPosBackY, pTex?pTex->m_dwWidth:0, pTex, NULL, NULL);
@@ -1953,11 +2048,11 @@ bool CMenuElementText::OnMouseClick(int _iMouseButton) {
 			if ( pWindowMenu )
 				for (size_t i = 0 ; i < pWindowMenu->vWindowConsoleElement.size() ; i++)
 				{
-					CWindowMenuConsole *p = pWindowMenu->vWindowConsoleElement[i];
+					CWindowMenuConsole * p = pWindowMenu->vWindowConsoleElement[i];
 
-					if ( p->eMenuState == EDIT_QUEST_LOAD )
-					{
-						pWindowMenu->vWindowConsoleElement[i]->lData = lData;
+					if(p->eMenuState == EDIT_QUEST_LOAD) {
+						
+						p->lData = lData;
 
 						for (size_t j = 0 ; j < p->MenuAllZone.vMenuZone.size() ; j++)
 						{
@@ -1982,11 +2077,11 @@ bool CMenuElementText::OnMouseClick(int _iMouseButton) {
 				for (size_t i = 0 ; i < pWindowMenu->vWindowConsoleElement.size() ; i++)
 			{
 				CWindowMenuConsole *p = pWindowMenu->vWindowConsoleElement[i];
-
-				if ( p->eMenuState == EDIT_QUEST_LOAD )
-				{
-					pWindowMenu->vWindowConsoleElement[i]->lData = lData;
-
+				
+				if(p->eMenuState == EDIT_QUEST_LOAD) {
+					
+					p->lData = lData;
+					
 						for (size_t j = 0 ; j < p->MenuAllZone.vMenuZone.size(); j++)
 					{
 						CMenuZone *cz = p->MenuAllZone.vMenuZone[j];
@@ -2012,15 +2107,13 @@ bool CMenuElementText::OnMouseClick(int _iMouseButton) {
 			{
 				CWindowMenuConsole *p = pWindowMenu->vWindowConsoleElement[i];
 
-				if ( p->eMenuState == EDIT_QUEST_LOAD )
-				{
+				if(p->eMenuState == EDIT_QUEST_LOAD) {
+					
 					lData = pWindowMenu->vWindowConsoleElement[i]->lData;
-
-					if ( lData )
-					{
+					if(lData != -1) {
 						eMenuState = MAIN;
 						GRenderer->Clear(Renderer::DepthBuffer);
-						ARXMenu_LoadQuest( lData );
+						ARXMenu_LoadQuest(lData);
 						bNoMenu=true;
 						if(pTextManage) {
 							pTextManage->Clear();
@@ -2047,15 +2140,14 @@ bool CMenuElementText::OnMouseClick(int _iMouseButton) {
 			{
 				CWindowMenuConsole *p = pWindowMenu->vWindowConsoleElement[i];
 
-				if ( p->eMenuState == EDIT_QUEST_SAVE_CONFIRM )
-				{
-					pWindowMenu->vWindowConsoleElement[i]->lData = lData;
+				if(p->eMenuState == EDIT_QUEST_SAVE_CONFIRM) {
+					
+					p->lData = lData;
 					CMenuElementText * me = (CMenuElementText *) p->MenuAllZone.vMenuZone[1];
-
+					
 					if(me) {
-						save_l[me->lData].name = me->lpszText;
 						eMenuState = MAIN;
-						ARXMenu_SaveQuest( me->lData );
+						ARXMenu_SaveQuest(me->lpszText, me->lData);
 						break;
 					}
 				}
@@ -2069,16 +2161,14 @@ bool CMenuElementText::OnMouseClick(int _iMouseButton) {
 			{
 				CWindowMenuConsole *p = pWindowMenu->vWindowConsoleElement[i];
 
-				if ( p->eMenuState == EDIT_QUEST_DELETE_CONFIRM )
-				{
-					pWindowMenu->vWindowConsoleElement[i]->lData = lData;
+				if(p->eMenuState == EDIT_QUEST_DELETE_CONFIRM) {
+					
+					p->lData = lData;
 					CMenuElementText * me = (CMenuElementText *) p->MenuAllZone.vMenuZone[1];
-
+					
 					if(me) {
-						save_l[me->lData].name = me->lpszText;
 						eMenuState = MAIN;
-						ARXMenu_DeleteQuest( me->lData );
-						CreateSaveGameList();
+						savegames.remove(me->lData);
 						break;
 					}
 				}
@@ -2238,20 +2328,17 @@ bool CMenuElementText::OnMouseClick(int _iMouseButton) {
 				p->lData = lData;
 				CMenuElementText * me = (CMenuElementText *) p->MenuAllZone.vMenuZone[1];
 
-				if ( me )
-				{
+				if(me) {
+					
 					me->lData = lData;
-					std::string szText;
-
-					if( lData )
-						szText = save_l[lData].name;
-					else
-					{
-						szText = getLocalised( "system_menu_editquest_newsavegame" );
+					
+					if(lData != -1) {
+						me->SetText(savegames[lData].name);
+					} else {
+						me->SetText(getLocalised("system_menu_editquest_newsavegame"));
 					}
-
-					me->SetText( szText );
-					p->AlignElementCenter( me );
+					
+					p->AlignElementCenter(me);
 				}
 			}
 		}
@@ -2324,17 +2411,22 @@ void CMenuElementText::RenderMouseOver()
 		case BUTTON_MENUEDITQUEST_LOAD:
 		case BUTTON_MENUEDITQUEST_SAVEINFO: {
 			
-			std::ostringstream oss;
-			oss << "save/save" << std::setw(4) << std::setfill('0') << save_l[lData].num << "/gsave";
-			
-			TextureContainer * pTextureTemp = TextureContainer::LoadUI(oss.str(), TextureContainer::NoColorKey);
-			if(pTextureTemp != pTextureLoad) {
-				if(pTextureLoad) {
-					delete pTextureLoad;
-				}
-				pTextureLoad = pTextureTemp;
+			if(lData == -1) {
+				pTextureLoadRender = NULL;
+				break;
 			}
-			pTextureLoadRender = pTextureLoad;
+			
+			const res::path & image = savegames[lData].thumbnail;
+			if(!image.empty()) {
+				TextureContainer * t = TextureContainer::LoadUI(image, TextureContainer::NoColorKey);
+				if(t != pTextureLoad) {
+					if(pTextureLoad) {
+						delete pTextureLoad;
+					}
+					pTextureLoad = t;
+				}
+				pTextureLoadRender = pTextureLoad;
+			}
 			
 			break;
 		}
@@ -2813,13 +2905,15 @@ bool CMenuCheckButton::OnMouseClick(int _iMouseButton) {
 			config.video.showCrosshair=(iState)?true:false;
 		}
 		break;
-	case BUTTON_MENUOPTIONSVIDEO_ANTIALIASING:
-		{
-			config.video.antialiasing=(iState)?true:false;
-
-			ARX_SetAntiAliasing();
-		}
+	case BUTTON_MENUOPTIONSVIDEO_ANTIALIASING: {
+		config.video.antialiasing = iState ? true : false;
+		ARX_SetAntiAliasing();
 		break;
+	}
+	case BUTTON_MENUOPTIONSVIDEO_VSYNC: {
+		config.video.vsync = iState ? true : false;
+		break;
+	}
 	case BUTTON_MENUOPTIONSAUDIO_EAX:
 		{
 			ARXMenu_Options_Audio_SetEAX((iState)?true:false);
@@ -4547,7 +4641,9 @@ bool CMenuSliderText::OnMouseClick(int)
 		{
 			iPos--;
 
-			if (iPos <= 0) iPos = 0;
+			if(iPos < 0) {
+				iPos = vText.size() - 1;
+			}
 		}
 		else if ((iX >= pRightButton->rZone.left) &&
 				(iY >= pRightButton->rZone.top) &&
@@ -4558,16 +4654,15 @@ bool CMenuSliderText::OnMouseClick(int)
 
 			arx_assert(iPos >= 0);
 
-			if ((size_t)iPos >= vText.size() - 1 )
-				iPos = vText.size() - 1 ;
+			if(size_t(iPos) >= vText.size()) {
+				iPos = 0;
+			}
 		}
 	}
 
-	switch (iID)
-	{
-	// MENUOPTIONS_VIDEO
-	case BUTTON_MENUOPTIONSVIDEO_RESOLUTION:
-		{
+	switch(iID) {
+		
+		case BUTTON_MENUOPTIONSVIDEO_RESOLUTION: {
 			std::string pcText = (vText.at(iPos))->lpszText;
 			
 			if(pcText == AUTO_RESOLUTION_STRING) {
@@ -4587,8 +4682,38 @@ bool CMenuSliderText::OnMouseClick(int)
 			}
 			
 			changeResolution = true;
+			break;
 		}
-		break;
+		
+		case BUTTON_MENUOPTIONSVIDEO_RENDERER: {
+			switch((vText.at(iPos))->eMenuState) {
+				case OPTIONS_VIDEO_RENDERER_OPENGL:    config.window.framework = "SDL"; break;
+				case OPTIONS_VIDEO_RENDERER_D3D9:      config.window.framework = "D3D9"; break;
+				case OPTIONS_VIDEO_RENDERER_AUTOMATIC: config.window.framework = "auto"; break;
+				default: break;
+			}
+			break;
+		}
+		
+		case BUTTON_MENUOPTIONSAUDIO_BACKEND: {
+			switch((vText.at(iPos))->eMenuState) {
+				case OPTIONS_AUDIO_BACKEND_OPENAL:    config.audio.backend = "OpenAL"; break;
+				case OPTIONS_AUDIO_BACKEND_DSOUND:    config.audio.backend = "DirectSound"; break;
+				case OPTIONS_AUDIO_BACKEND_AUTOMATIC: config.audio.backend = "auto"; break;
+				default: break;
+			}
+			break;
+		}
+		case BUTTON_MENUOPTIONS_CONTROLS_BACKEND: {
+			switch((vText.at(iPos))->eMenuState) {
+				case OPTIONS_INPUT_BACKEND_SDL:       config.input.backend = "SDL"; break;
+				case OPTIONS_INPUT_BACKEND_DINPUT:    config.input.backend = "DirectInput8"; break;
+				case OPTIONS_INPUT_BACKEND_AUTOMATIC: config.input.backend = "auto"; break;
+				default: break;
+			}
+			break;
+		}
+		
 	// MENUOPTIONS_VIDEO
 	case BUTTON_MENUOPTIONSVIDEO_BPP:
 		{
@@ -4849,6 +4974,11 @@ bool CMenuSlider::OnMouseClick(int)
 	case BUTTON_MENUOPTIONS_CONTROLS_MOUSESENSITIVITY:
 		ARXMenu_Options_Control_SetMouseSensitivity(iPos);
 		break;
+		case BUTTON_MENUOPTIONS_CONTROLS_QUICKSAVESLOTS: {
+			iPos = std::max(iPos, 1);
+			config.misc.quicksaveSlots = iPos;
+			break;
+		}
 	}
 
 	return false;
