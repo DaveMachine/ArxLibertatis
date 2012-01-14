@@ -36,17 +36,38 @@ public:
 	void SetTexture(Texture * pTexture);
 	void ResetTexture();
 	
-	void SetColorOp(TextureOp textureOp, TextureArg arg0, TextureArg arg1);
-	void SetColorOp(TextureOp textureOp);
-	void SetAlphaOp(TextureOp textureOp, TextureArg arg0, TextureArg arg1);
-	void SetAlphaOp(TextureOp textureOp);
-	
-	void SetWrapMode(WrapMode wrapMode);
-	
-	void SetMinFilter(FilterMode filterMode);
-	void SetMagFilter(FilterMode filterMode);
-	void SetMipFilter(FilterMode filterMode);
-	
+	void SetColorOp(TextureOp op, TextureArg arg0, TextureArg arg1) {
+		setOp(Color, op, arg0, arg1);
+	}
+
+	void SetColorOp(TextureOp op) {
+		setOp(Color, op);
+	}
+
+	void SetAlphaOp(TextureOp op, TextureArg arg0, TextureArg arg1) {
+		setOp(Alpha, op, arg0, arg1);
+	}
+
+	void SetAlphaOp(TextureOp op) {
+		setOp(Alpha, op);
+	}
+
+	void SetWrapMode(WrapMode _wrapMode) {
+		wrapMode = _wrapMode;
+	}
+
+	void SetMinFilter(FilterMode filterMode) {
+		minFilter = filterMode;
+	}
+
+	void SetMagFilter(FilterMode filterMode) {
+		magFilter = filterMode;
+	}
+
+	void SetMipFilter(FilterMode filterMode) {
+		mipFilter = filterMode;
+	}
+
 	void SetMipMapLODBias(float bias);
 	
 	void apply();

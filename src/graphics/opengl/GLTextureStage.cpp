@@ -221,38 +221,6 @@ void GLTextureStage::setOp(OpType alpha, TextureOp op, TextureArg arg0, TextureA
 	setOp(alpha, op);
 }
 
-void GLTextureStage::SetColorOp(TextureOp op, TextureArg arg0, TextureArg arg1) {
-	setOp(Color, op, arg0, arg1);
-}
-
-void GLTextureStage::SetColorOp(TextureOp op) {
-	setOp(Color, op);
-}
-
-void GLTextureStage::SetAlphaOp(TextureOp op, TextureArg arg0, TextureArg arg1) {
-	setOp(Alpha, op, arg0, arg1);
-}
-
-void GLTextureStage::SetAlphaOp(TextureOp op) {
-	setOp(Alpha, op);
-}
-
-void GLTextureStage::SetWrapMode(WrapMode _wrapMode) {
-	wrapMode = _wrapMode;
-}
-
-void GLTextureStage::SetMinFilter(FilterMode filterMode) {
-	minFilter = filterMode;
-}
-
-void GLTextureStage::SetMagFilter(FilterMode filterMode) {
-	magFilter = filterMode;
-}
-
-void GLTextureStage::SetMipFilter(FilterMode filterMode) {
-	mipFilter = filterMode;
-}
-
 void GLTextureStage::SetMipMapLODBias(float bias) {
 	
 	if(mStage != 0) {
