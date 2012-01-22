@@ -68,14 +68,14 @@ D3D9TextureStage::D3D9TextureStage(unsigned int textureStage) : TextureStage(tex
 	GD3D9Device->SetTextureStageState(textureStage, D3DTSS_TEXCOORDINDEX, textureStage);
 }
 
-void D3D9TextureStage::SetColorOp(TextureOp textureOp)
+void D3D9TextureStage::ApplyColorOp(TextureOp textureOp)
 {
 	// TODO-DX9: Cache states
 	DWORD colorOp = ARXToDX9TextureOp[textureOp];
 	GD3D9Device->SetTextureStageState(mStage, D3DTSS_COLOROP, colorOp);
 }
 
-void D3D9TextureStage::SetColorOp(TextureOp textureOp, TextureArg texArg1, TextureArg texArg2)
+void D3D9TextureStage::ApplyColorOp(TextureOp textureOp, TextureArg texArg1, TextureArg texArg2)
 {
 	// TODO-DX9: Cache states
 	DWORD colorOp = ARXToDX9TextureOp[textureOp];
@@ -99,14 +99,14 @@ void D3D9TextureStage::SetColorOp(TextureOp textureOp, TextureArg texArg1, Textu
 	}
 }
 
-void D3D9TextureStage::SetAlphaOp(TextureOp textureOp)
+void D3D9TextureStage::ApplyAlphaOp(TextureOp textureOp)
 {
 	// TODO-DX9: Cache states
 	DWORD colorOp = ARXToDX9TextureOp[textureOp];
 	GD3D9Device->SetTextureStageState(mStage, D3DTSS_ALPHAOP, colorOp);
 }
 
-void D3D9TextureStage::SetAlphaOp(TextureOp textureOp, TextureArg texArg1, TextureArg texArg2)
+void D3D9TextureStage::ApplyAlphaOp(TextureOp textureOp, TextureArg texArg1, TextureArg texArg2)
 {
 	// TODO-DX9: Cache states
 	DWORD alphaOp = ARXToDX9TextureOp[textureOp];
@@ -143,31 +143,31 @@ void D3D9TextureStage::ResetTexture()
 	GD3D9Device->SetTexture(mStage, 0);
 }
 
-void D3D9TextureStage::SetWrapMode(TextureStage::WrapMode wrapMode)
+void D3D9TextureStage::ApplyWrapMode(TextureStage::WrapMode wrapMode)
 {
 	GD3D9Device->SetSamplerState(mStage, D3DSAMP_ADDRESSU, ARXToDX9WrapMode[wrapMode]);
 	GD3D9Device->SetSamplerState(mStage, D3DSAMP_ADDRESSV, ARXToDX9WrapMode[wrapMode]);
 	GD3D9Device->SetSamplerState(mStage, D3DSAMP_ADDRESSW, ARXToDX9WrapMode[wrapMode]);
 }
 
-void D3D9TextureStage::SetMinFilter(FilterMode filterMode)
+void D3D9TextureStage::ApplyMinFilter(FilterMode filterMode)
 {
 	arx_assert_msg(filterMode != TextureStage::FilterNone, "Invalid minification filter");
 	GD3D9Device->SetSamplerState(mStage, D3DSAMP_MINFILTER, ARXToDX9MinFilter[filterMode]);
 }
 
-void D3D9TextureStage::SetMagFilter(FilterMode filterMode)
+void D3D9TextureStage::ApplyMagFilter(FilterMode filterMode)
 {
 	arx_assert_msg(filterMode != TextureStage::FilterNone, "Invalid magnification filter");
 	GD3D9Device->SetSamplerState(mStage, D3DSAMP_MAGFILTER, ARXToDX9MagFilter[filterMode]);
 }
 
-void D3D9TextureStage::SetMipFilter(FilterMode filterMode)
+void D3D9TextureStage::ApplyMipFilter(FilterMode filterMode)
 {
 	D3DTEXTUREFILTERTYPE mipFilter = ARXToDX9MipFilter[filterMode];
 	GD3D9Device->SetSamplerState(mStage, D3DSAMP_MIPFILTER, mipFilter);
 }
 
-void D3D9TextureStage::SetMipMapLODBias(float bias) {
+void D3D9TextureStage::ApplyMipMapLODBias(float bias) {
 	GD3D9Device->SetSamplerState(mStage, D3DSAMP_MIPMAPLODBIAS, reinterpret<DWORD, f32>(bias));
 }

@@ -33,18 +33,18 @@ public:
 	void SetTexture(Texture * pTexture);
 	void ResetTexture();
 	
-	void SetColorOp(TextureOp textureOp, TextureArg texArg1, TextureArg texArg2);
-	void SetColorOp(TextureOp textureOp);
-	void SetAlphaOp(TextureOp textureOp, TextureArg texArg1, TextureArg texArg2);
-	void SetAlphaOp(TextureOp textureOp);
+	void ApplyColorOp(TextureOp textureOp, TextureArg texArg1, TextureArg texArg2);
+	void ApplyColorOp(TextureOp textureOp);
+	void ApplyAlphaOp(TextureOp textureOp, TextureArg texArg1, TextureArg texArg2);
+	void ApplyAlphaOp(TextureOp textureOp);
 	
-	void SetWrapMode(WrapMode wrapMode);
+	void ApplyWrapMode(WrapMode wrapMode);
 	
-	void SetMinFilter(FilterMode filterMode);
-	void SetMagFilter(FilterMode filterMode);
-	void SetMipFilter(FilterMode filterMode);
+	void ApplyMinFilter(FilterMode filterMode);
+	void ApplyMagFilter(FilterMode filterMode);
+	void ApplyMipFilter(FilterMode filterMode);
 	
-	void SetMipMapLODBias(float bias);
+	void ApplyMipMapLODBias(float bias);
 };
 
 extern D3DTEXTUREFILTERTYPE ARXToDX9MagFilter[];

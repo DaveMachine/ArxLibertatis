@@ -142,8 +142,8 @@ extern long START_NEW_QUEST;
 extern long CHANGE_LEVEL_ICON;
 extern long SPLASH_THINGS_STAGE;
 extern long REFUSE_GAME_RETURN;
-extern long PLAYER_MOUSELOOK_ON;
-extern long TRUE_PLAYER_MOUSELOOK_ON;
+extern bool PLAYER_MOUSELOOK_ON;
+extern bool TRUE_PLAYER_MOUSELOOK_ON;
 extern long FRAME_COUNT;
 extern long PLAYER_PARALYSED;
 extern long STOP_KEYBOARD_INPUT;
@@ -664,9 +664,36 @@ void ArxGame::Cleanup3DEnvironment() {
 // Draws text on the window.
 //*************************************************************************************
 void ArxGame::OutputText(int x, int y, const string & str) {
-	if(m_bReady) {
+	if (m_bReady) {
 		hFontInGame->Draw(x, y, str, Color(255, 255, 0));
 	}
+}
+
+//*************************************************************************************
+// OutputText()
+// Draws text on the window using selected font and color
+// at position defined by column,row.
+//*************************************************************************************
+void ArxGame::OutputTextGrid(float column, float row, const std::string &text, const Color &color)
+{
+	Font *selected_font = hFontInGame;
+
+	// find display size
+	const Vec2i &window = GetWindow()->GetSize();
+
+	const int tsize = selected_font->GetLineHeight();
+
+	// TODO: could use quadrants for width or something similar
+	// TODO: could center text in column/row
+	const Vector2<int> size(window.x / 4, selected_font->GetLineHeight());
+	const Vector2<int> spacing(2, 2);
+	const Vector2<float> p(column + (column < 0), row + (row < 0));
+
+	// offset text into the screen a bit
+	const Vector2<int> offset((column < 0 ? window.x - tsize - size.x : tsize), (row < 0 ? window.y - tsize - size.y : tsize));
+
+	// print the text directly using our selected font
+	selected_font->Draw(offset + Vector2<int>(p.x * (size + spacing).x, p.y * (size + spacing).y), text, color);
 }
 
 bool ArxGame::BeforeRun() {
@@ -1098,7 +1125,7 @@ bool ArxGame::Render() {
 
 				arx_assert(inter.iobj[0]->obj != NULL);
 				EERIEDrawAnimQuat(inter.iobj[0]->obj, &inter.iobj[0]->animlayer[0], &inter.iobj[0]->angle,
-				                  &inter.iobj[0]->pos, checked_range_cast<unsigned long>(iCalc), inter.iobj[0], false);
+				                  &inter.iobj[0]->pos, checked_range_cast<unsigned long>(iCalc), inter.iobj[0], false, false);
 
 					if ((player.Interface & INTER_COMBATMODE) && (inter.iobj[0]->animlayer[1].cur_anim != NULL))
 				ManageCombatModeAnimations();
@@ -1127,7 +1154,7 @@ bool ArxGame::Render() {
 
 			arx_assert(inter.iobj[0]->obj != NULL);
 			EERIEDrawAnimQuat(inter.iobj[0]->obj, &inter.iobj[0]->animlayer[0], &inter.iobj[0]->angle,
-			                  &inter.iobj[0]->pos, checked_range_cast<unsigned long>(val), inter.iobj[0], false);
+			                  &inter.iobj[0]->pos, checked_range_cast<unsigned long>(val), inter.iobj[0], false, false);
 
 
 				if ((player.Interface & INTER_COMBATMODE) && (inter.iobj[0]->animlayer[1].cur_anim != NULL))

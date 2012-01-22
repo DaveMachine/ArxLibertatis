@@ -221,7 +221,7 @@ void GLTextureStage::setOp(OpType alpha, TextureOp op, TextureArg arg0, TextureA
 	setOp(alpha, op);
 }
 
-void GLTextureStage::SetMipMapLODBias(float bias) {
+void GLTextureStage::ApplyMipMapLODBias(float bias) {
 	
 	if(mStage != 0) {
 		glActiveTexture(GL_TEXTURE0 + mStage);

@@ -92,8 +92,16 @@ void Renderer::push()
 
 void Renderer::pop()
 {
+	// current configuration
 	configuration &config = stack.back();
+	// stored configuration
 	configuration &old = *(stack.end() - 1);
+
+	// optimization -
+	// check if a value has been modified, if so restore it from the stack
+	// this prevents Apply() being called without even potential for a state change
+
+	// TODO: could check to ensure state change did occur here, or in Set()
 
 	for (int i = 0; i < nRenderStates; i++)
 	{

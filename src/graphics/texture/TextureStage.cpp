@@ -32,14 +32,22 @@ TextureStage::TextureStage(unsigned int stage) : mStage(stage)
 
 void TextureStage::push()
 {
+
 	stack.push_back(configuration(stack.back()));
 }
 
 void TextureStage::pop()
 {
-	// just to prevent unused var warning
-	//configuration &config = stack.back();
-	//configuration &old = *(stack.end() - 1);
+	// current configuration
+	configuration &config = stack.back();
+	// stored configuration
+	configuration &old = *(stack.end() - 1);
+
+	// optimization -
+	// check if a value has been modified, if so restore it from the stack
+	// this prevents Apply() being called without even potential for a state change
+
+	// TODO: could check to ensure state change did occur here, or in Set()
 
 	// ...
 

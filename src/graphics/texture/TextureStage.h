@@ -72,7 +72,9 @@ public:
 			void  clear()
 			{
 				color = false;
+				colorarg = false;
 				alpha = false;
+				alphaarg = false;
 				wrap = false;
 				min = false;
 				mag = false;
@@ -80,7 +82,9 @@ public:
 				lod = false;
 			}
 			bool color;
+			bool colorarg;
 			bool alpha;
+			bool alphaarg;
 			bool wrap;
 			bool min;
 			bool mag;
@@ -109,22 +113,22 @@ public:
 				mip = FilterNone;
 				lod = 0.0f;
 			}
-			// color op
+			/// color op
 			TextureOp colorop;
 			TextureArg colorarg1;
 			TextureArg colorarg2;
 			bool colorenabled;
 
-			// alpha op
+			/// alpha op
 			TextureOp alphaop;
 			TextureArg alphaarg1;
 			TextureArg alphaarg2;
 			bool alphaenabled;
 
-			// wrap mode
+			/// wrap mode
 			WrapMode wrapmode;
 
-			// filters
+			/// filters
 			FilterMode min;
 			FilterMode mag;
 			FilterMode mip;
@@ -138,24 +142,99 @@ public:
 	explicit TextureStage(unsigned int stage);
 	virtual ~TextureStage() { }
 	
+	/// texture
 	virtual void SetTexture(Texture * pTexture) = 0;
 	virtual void ResetTexture() = 0;
+
+	/// wrapper functions
+	inline void SetColorOp(TextureArg texArg)	{
+		SetColorOp(OpSelectArg1, texArg, ArgCurrent);
+	}
+	inline void DisableColor() {
+		SetColorOp(OpDisable, ArgCurrent, ArgCurrent);
+	}
+	inline void SetAlphaOp(TextureArg texArg) {
+		SetAlphaOp(OpSelectArg1, texArg, ArgCurrent);
+	}
+	inline void DisableAlpha() {
+		SetAlphaOp(OpDisable, ArgCurrent, ArgCurrent);
+	}
+
+	// below this point state is tracked by the stack
+
+	/// color op
+	virtual void SetColorOp(TextureOp textureOp, TextureArg texArg1, TextureArg texArg2) {
+		configuration &config = stack.back();
+		config.dirty.color = true;
+		config.dirty.colorarg = true;
+		config.state.colorop = textureOp;
+		config.state.colorarg1 = texArg1;
+		config.state.colorarg2 = texArg2;
+		ApplyColorOp(textureOp, texArg1, texArg2);
+	}
+	virtual void ApplyColorOp(TextureOp textureOp, TextureArg texArg1, TextureArg texArg2) = 0;
+	virtual void SetColorOp(TextureOp textureOp) {
+		configuration &config = stack.back();
+		config.dirty.color = true;
+		config.state.colorop = textureOp;
+		ApplyColorOp(textureOp);
+	}
+	virtual void ApplyColorOp(TextureOp textureOp) = 0;
 	
-	virtual void SetColorOp(TextureOp textureOp, TextureArg texArg1, TextureArg texArg2) = 0;
-	virtual void SetColorOp(TextureOp textureOp) = 0;
-	inline void SetColorOp(TextureArg texArg);
-	inline void DisableColor();
+	/// alpha op
+	virtual void SetAlphaOp(TextureOp textureOp, TextureArg texArg1, TextureArg texArg2) {
+		configuration &config = stack.back();
+		config.dirty.alpha = true;
+		config.dirty.alphaarg = true;
+		config.state.alphaop = textureOp;
+		config.state.alphaarg1 = texArg1;
+		config.state.alphaarg2 = texArg2;
+		ApplyAlphaOp(textureOp, texArg1, texArg2);
+	}
+	virtual void ApplyAlphaOp(TextureOp textureOp, TextureArg texArg1, TextureArg texArg2) = 0;
+	virtual void SetAlphaOp(TextureOp textureOp) {
+		configuration &config = stack.back();
+		config.dirty.alpha = true;
+		config.state.alphaop = textureOp;
+		ApplyAlphaOp(textureOp);
+	}
+	virtual void ApplyAlphaOp(TextureOp textureOp) = 0;
+
+	/// wrap mode
+	virtual void SetWrapMode(WrapMode wrapMode) {
+		configuration &config = stack.back();
+		config.dirty.wrap = true;
+		config.state.wrapmode = wrapMode;
+		ApplyWrapMode(wrapMode);
+	}
+	virtual void ApplyWrapMode(WrapMode wrapMode) = 0;
 	
-	virtual void SetAlphaOp(TextureOp textureOp, TextureArg texArg1, TextureArg texArg2) = 0;
-	virtual void SetAlphaOp(TextureOp textureOp) = 0;
-	inline void SetAlphaOp(TextureArg texArg);
-	inline void DisableAlpha();
-	
-	virtual void SetWrapMode(WrapMode wrapMode) = 0;
-	
-	virtual void SetMinFilter(FilterMode filterMode) = 0;
-	virtual void SetMagFilter(FilterMode filterMode) = 0;
-	virtual void SetMipFilter(FilterMode filterMode) = 0;
+	/// min filter
+	void SetMinFilter(FilterMode filterMode) {
+		configuration &config = stack.back();
+		config.dirty.min = true;
+		config.state.min = filterMode;
+		ApplyMinFilter(filterMode);
+	}
+	virtual void ApplyMinFilter(FilterMode filterMode) = 0;
+
+	/// mag filter
+	void SetMagFilter(FilterMode filterMode) {
+		configuration &config = stack.back();
+		config.dirty.mag = true;
+		config.state.mag = filterMode;
+		ApplyMagFilter(filterMode);
+	}
+	virtual void ApplyMagFilter(FilterMode filterMode) = 0;
+
+	/// mip filter
+	void SetMipFilter(FilterMode filterMode) {
+		configuration &config = stack.back();
+		config.dirty.mip = true;
+		config.state.mip = filterMode;
+		ApplyMipFilter(filterMode);
+	}
+	virtual void ApplyMipFilter(FilterMode filterMode) = 0;
 	
 	//! Level of detail bias for mipmaps. Can be used to make textures appear more chunky or more blurred.
 	/* Each unit bias (+/-1.0) biases the selection by exactly one MIP map level. 
@@ -163,8 +242,16 @@ public:
 	 * A positive bias causes the use of smaller MIP map levels, resulting in a blurrier image. 
 	 * Applying a negative bias also results in the referencing of a smaller amount of texture data, which can boost performance on some systems.
 	 */
-	virtual void SetMipMapLODBias(float bias) = 0;
+	/// lod bias
+	void SetMipMapLODBias(float bias) {
+		configuration &config = stack.back();
+		config.dirty.lod = true;
+		config.state.lod = bias;
+		ApplyMipMapLODBias(bias);
+	}
+	virtual void ApplyMipMapLODBias(float bias) = 0;
 	
+	/// stack
 	void push();
 	void pop();
 
@@ -176,22 +263,5 @@ private:
 
 	std::deque<configuration> stack;
 };
-
-
-inline void TextureStage::SetColorOp(TextureArg texArg) {
-	SetColorOp(OpSelectArg1, texArg, ArgCurrent);
-}
-
-inline void TextureStage::DisableColor() {
-	SetColorOp(OpDisable, ArgCurrent, ArgCurrent);
-}
-
-inline void TextureStage::SetAlphaOp(TextureArg texArg) {
-	SetAlphaOp(OpSelectArg1, texArg, ArgCurrent);
-}
-
-inline void TextureStage::DisableAlpha() {
-	SetAlphaOp(OpDisable, ArgCurrent, ArgCurrent);
-}
 
 #endif // ARX_GRAPHICS_TEXTURE_TEXTURESTAGE_H
