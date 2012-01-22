@@ -32,12 +32,17 @@ TextureStage::TextureStage(unsigned int stage) : mStage(stage)
 
 void TextureStage::push()
 {
-
+	// copy the current state into the new stack frame
+	// TODO: could be used to check for state change
+	// could also just check the old stack frame! (no copy needed)
 	stack.push_back(configuration(stack.back()));
 }
 
 void TextureStage::pop()
 {
+	// stack must always contain at least two frames for pop()
+	arx_assert(stack.size() >= 2);
+
 	// current configuration
 	configuration &config = stack.back();
 	// stored configuration
@@ -49,10 +54,45 @@ void TextureStage::pop()
 
 	// TODO: could check to ensure state change did occur here, or in Set()
 
+	if (config.dirty.color) {
+		if (config.dirty.colorarg) {
+			ApplyColorOp(old.state.colorop, old.state.colorarg1, old.state.colorarg2);
+		} else {
+			ApplyColorOp(old.state.colorop);
+		}
+	}
+	
+	if (config.dirty.alpha)	{
+		if (config.dirty.alphaarg) {
+			ApplyAlphaOp(old.state.alphaop, old.state.alphaarg1, old.state.alphaarg2);
+		} else {
+			ApplyAlphaOp(old.state.alphaop);
+		}
+	}
+
+	if (config.dirty.wrap) {
+		ApplyWrapMode(old.state.wrapmode);
+	}
+
+	if (config.dirty.min) {
+		ApplyMinFilter(old.state.min);
+	}
+
+	if (config.dirty.mag) {
+		ApplyMagFilter(old.state.mag);
+	}
+
+	if (config.dirty.mip) {
+		ApplyMipFilter(old.state.mip);
+	}
+
+	if (config.dirty.lod) {
+		ApplyMipMapLODBias(old.state.lod);
+	}
+
 	// ...
 
 	stack.pop_back();
-	arx_assert(!stack.empty());
 }
 
 TextureStage::configuration::configuration()

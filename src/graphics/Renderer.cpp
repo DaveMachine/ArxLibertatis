@@ -73,25 +73,19 @@ Renderer::Renderer()
 	config.state.clear();
 }
 
-Renderer::configuration::configuration(const configuration &old)
-{
-	dirty.clear();
-	state = old.state;
-}
-
-Renderer::configuration::configuration()
-{
-	dirty.clear();
-	state.clear();
-}
-
 void Renderer::push()
 {
+	// copy the current state into the new stack frame
+	// TODO: could be used to check for state change
+	// could also just check the old stack frame! (no copy needed)
 	stack.push_back(configuration(stack.back()));
 }
 
 void Renderer::pop()
 {
+	// stack must always contain at least two frames for pop()
+	arx_assert(stack.size() >= 2);
+
 	// current configuration
 	configuration &config = stack.back();
 	// stored configuration
@@ -103,56 +97,57 @@ void Renderer::pop()
 
 	// TODO: could check to ensure state change did occur here, or in Set()
 
-	for (int i = 0; i < nRenderStates; i++)
-	{
-		if (config.dirty.renderstate[i])
-		{
+	for (int i = 0; i < nRenderStates; i++) {
+		if (config.dirty.renderstate[i])	{
 			ApplyRenderState((RenderState)i, old.state.renderstate[i]);
 		}
 	}
 
-	if (config.dirty.alphafunc)
-	{
+	if (config.dirty.alphafunc) {
 		ApplyAlphaFunc(old.state.alphafunc, old.state.alphafef);
 	}
 
-	if (config.dirty.antialiasing)
-	{
+	if (config.dirty.antialiasing) {
 		ApplyAntialiasing(old.state.antialiasing);
 	}
 
-	if (config.dirty.blendfunc)
-	{
+	if (config.dirty.blendfunc) {
 		ApplyBlendFunc(old.state.blendsrcFactor, old.state.blenddstFactor);
 	}
 
-	if (config.dirty.culling)
-	{
+	if (config.dirty.culling) {
 		ApplyCulling(old.state.cullingmode);
 	}
 
-	if (config.dirty.depthbias)
-	{
+	if (config.dirty.depthbias) {
 		ApplyDepthBias(old.state.depthbias);
 	}
 
-	if (config.dirty.fillmode)
-	{
+	if (config.dirty.fillmode) {
 		ApplyFillMode(old.state.fillmode);
 	}
 
-	if (config.dirty.fogcolor)
-	{
+	if (config.dirty.fogcolor) {
 		ApplyFogColor(old.state.fogcolor);
 	}
 
-	if (config.dirty.fogparams)
-	{
+	if (config.dirty.fogparams) {
 		ApplyFogParams(old.state.fogMode, old.state.fogStart, old.state.fogEnd, old.state.fogDensity);
 	}
 
 	// ...
 
 	stack.pop_back();
-	arx_assert(!stack.empty());
+}
+
+Renderer::configuration::configuration()
+{
+	dirty.clear();
+	state.clear();
+}
+
+Renderer::configuration::configuration(const configuration &old)
+{
+	dirty.clear();
+	state = old.state;
 }

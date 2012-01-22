@@ -99,12 +99,10 @@ public:
 				colorop = OpDisable;
 				colorarg1 = ArgDiffuse;
 				colorarg2 = ArgDiffuse;
-				colorenabled = false;
 
 				alphaop = OpDisable;
 				alphaarg1 = ArgDiffuse;
 				alphaarg2 = ArgDiffuse;
-				alphaenabled = false;
 
 				wrapmode = WrapRepeat;
 
@@ -117,13 +115,11 @@ public:
 			TextureOp colorop;
 			TextureArg colorarg1;
 			TextureArg colorarg2;
-			bool colorenabled;
 
 			/// alpha op
 			TextureOp alphaop;
 			TextureArg alphaarg1;
 			TextureArg alphaarg2;
-			bool alphaenabled;
 
 			/// wrap mode
 			WrapMode wrapmode;
