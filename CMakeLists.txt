@@ -724,15 +724,19 @@ set(PLATFORM_SOURCES
 	src/platform/Lock.cpp
 	src/platform/Platform.cpp
 	src/platform/String.cpp
-	src/platform/Thread.cpp
 	src/platform/Time.cpp
 )
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	list(APPEND PLATFORM_SOURCES src/platform/Dialog.mm)
 endif()
 
+# Extra platform abstraction - depends on the crash handler
+set(PLATFORM_EXTRA_SOURCES
+	src/platform/Thread.cpp
+)
+
 # Crash handler sources
-set(PLATFORM_CRASHHANDLER_SOURCES src/platform/CrashHandler.cpp )
+set(PLATFORM_CRASHHANDLER_SOURCES src/platform/CrashHandler.cpp)
 set(PLATFORM_CRASHHANDLER_IMPL_SOURCES src/platform/crashhandler/CrashHandlerImpl.cpp)
 set(PLATFORM_CRASHHANDLER_POSIX_SOURCES src/platform/crashhandler/CrashHandlerPOSIX.cpp)
 set(PLATFORM_CRASHHANDLER_WINDOWS_SOURCES src/platform/crashhandler/CrashHandlerWindows.cpp)
@@ -913,7 +917,25 @@ if(NOT MSVC)
 	check_link_library(Boost Boost_LIBRARIES)
 endif()
 
-set(ARX_SOURCES ${AI_SOURCES} ${ANIMATION_SOURCES} ${AUDIO_SOURCES} ${CORE_SOURCES} ${GAME_SOURCES} ${GRAPHICS_SOURCES} ${GUI_SOURCES} ${INPUT_SOURCES} ${IO_SOURCES} ${MATH_SOURCES} ${PHYSICS_SOURCES} ${PLATFORM_SOURCES} ${PLATFORM_CRASHHANDLER_SOURCES} ${SCENE_SOURCES} ${SCRIPT_SOURCES} ${WINDOW_SOURCES})
+set(ARX_SOURCES
+	${AI_SOURCES}
+	${ANIMATION_SOURCES}
+	${AUDIO_SOURCES}
+	${CORE_SOURCES}
+	${GAME_SOURCES}
+	${GRAPHICS_SOURCES}
+	${GUI_SOURCES}
+	${INPUT_SOURCES}
+	${IO_SOURCES}
+	${MATH_SOURCES}
+	${PHYSICS_SOURCES}
+	${PLATFORM_SOURCES}
+	${PLATFORM_EXTRA_SOURCES}
+	${PLATFORM_CRASHHANDLER_SOURCES}
+	${SCENE_SOURCES}
+	${SCRIPT_SOURCES}
+	${WINDOW_SOURCES}
+)
 
 # Set the icon for the Windows executable by adding this resource file to the sources
 if(MSVC)
